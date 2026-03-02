@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Focus Mode Home Timer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#088396",
+                        "background-light": "#f2f7f9",
+                        "background-dark": "#102022",
+                        "glass-border": "rgba(255, 255, 255, 0.4)",
+                        "glass-bg": "rgba(255, 255, 255, 0.6)",
+                        "accent-teal": "#7AB2B2",
+                        "dark-teal": "#09637E",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                    backdropBlur: {
+                        "xs": "2px",
+                    }
+                },
+            },
+        }
+    </script>
+<style>.no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }.glass-panel {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        }
+        .dark .glass-panel {
+            background: rgba(16, 32, 34, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }.decorative-sphere {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.6;
+            z-index: 0;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen relative overflow-hidden flex flex-col items-center justify-center">
+<div class="decorative-sphere w-64 h-64 bg-accent-teal top-[-50px] left-[-50px]"></div>
+<div class="decorative-sphere w-80 h-80 bg-primary/30 bottom-[-50px] right-[-80px]"></div>
+<div class="relative w-full max-w-md h-full min-h-screen flex flex-col z-10 glass-panel shadow-2xl overflow-hidden">
+<header class="pt-12 pb-4 px-6 flex justify-between items-center z-20 relative">
+<div class="w-10">
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl">shield_lock</span>
+<h1 class="text-xl font-bold tracking-tight text-slate-800 dark:text-white">Focus Mode</h1>
+</div>
+<div class="w-10 flex justify-end">
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
+<span class="material-symbols-outlined text-slate-500">help</span>
+</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto no-scrollbar px-6 py-2 flex flex-col gap-6">
+<div class="glass-panel rounded-2xl p-5 flex items-center justify-between">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">public</span>
+<h2 class="font-bold text-slate-800 dark:text-white">Global Protection</h2>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400">Current: google.com</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-12 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 dark:peer-focus:ring-primary/80 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-primary shadow-inner"></div>
+</label>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+<div class="relative w-64 h-64 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 256 256">
+<circle class="text-slate-200 dark:text-slate-700/50" cx="128" cy="128" fill="none" r="110" stroke="currentColor" stroke-width="12"></circle>
+<circle class="text-dark-teal dark:text-primary transition-all duration-1000 ease-linear" cx="128" cy="128" fill="none" r="110" stroke="currentColor" stroke-dasharray="691" stroke-dashoffset="172" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-6xl font-bold text-slate-800 dark:text-white tracking-tighter tabular-nums">18:45</span>
+<span class="text-slate-500 dark:text-slate-400 font-medium mt-1">Focusing</span>
+</div>
+<div class="absolute top-0 w-2 h-4 bg-primary rounded-full transform -translate-y-1/2"></div>
+</div>
+<div class="mt-8 flex items-center gap-8 w-full justify-center">
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors">
+<div class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">restart_alt</span>
+</div>
+<span class="text-xs font-medium">Reset</span>
+</button>
+<button class="group relative flex items-center justify-center w-20 h-20 bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/30 transition-all transform hover:scale-105 active:scale-95">
+<span class="material-symbols-outlined text-4xl filled">play_arrow</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors">
+<div class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">more_time</span>
+</div>
+<span class="text-xs font-medium">+5m</span>
+</button>
+</div>
+</div>
+<div class="glass-panel rounded-2xl p-4 flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Today's Focus</p>
+<div class="flex items-end gap-2">
+<span class="text-xl font-bold text-slate-800 dark:text-white">4h 20m</span>
+<span class="text-xs text-green-600 font-medium mb-1">+12% vs yesterday</span>
+</div>
+</div>
+</div>
+</main>
+<nav class="bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 px-6 pb-6 pt-3">
+<ul class="flex justify-between items-center">
+<li>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined fill-current text-[28px] filled">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+</li>
+<li>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[28px]">shield</span>
+<span class="text-[10px] font-medium">Blocklist</span>
+</a>
+</li>
+<li>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[28px]">bar_chart</span>
+<span class="text-[10px] font-medium">Stats</span>
+</a>
+</li>
+<li>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[28px]">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+</body></html>

@@ -1,0 +1,44 @@
+{
+  "../../../../@crx/manifest": {
+    "file": "assets/crx-manifest.js-Bhijeyxw.js",
+    "name": "crx-manifest.js",
+    "src": "../../../../@crx/manifest",
+    "isEntry": true
+  },
+  "_chart-lib-C4Rk4rnr.js": {
+    "file": "assets/chart-lib-C4Rk4rnr.js",
+    "name": "chart-lib"
+  },
+  "_index-Bt5AiwKG.js": {
+    "file": "assets/index-Bt5AiwKG.js",
+    "name": "index"
+  },
+  "src/background/index.ts": {
+    "file": "assets/index.ts-DKxz23EE.js",
+    "name": "index.ts",
+    "src": "src/background/index.ts",
+    "isEntry": true,
+    "imports": [
+      "_index-Bt5AiwKG.js"
+    ]
+  },
+  "src/content/index.ts": {
+    "file": "assets/index.ts-nSMuNC0B.js",
+    "name": "index.ts",
+    "src": "src/content/index.ts",
+    "isEntry": true
+  },
+  "src/popup/index.html": {
+    "file": "assets/index.html-CGQJYdri.js",
+    "name": "index.html",
+    "src": "src/popup/index.html",
+    "isEntry": true,
+    "imports": [
+      "_chart-lib-C4Rk4rnr.js",
+      "_index-Bt5AiwKG.js"
+    ],
+    "css": [
+      "assets/index-C8X0oGNB.css"
+    ]
+  }
+}

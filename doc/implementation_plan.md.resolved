@@ -1,0 +1,120 @@
+# NerdTimer 2.0 — 實作計畫
+
+## 背景
+
+根據 PRD，從零建立 NerdTimer 2.0 Chrome Extension（MV3），實現網站封鎖、計時器、時間統計與設定管理四大核心功能。目前 `app/` 目錄為空，需完整初始化。
+
+## Proposed Changes
+
+### 專案根目錄 (`app/`)
+
+#### [NEW] 專案初始化
+- 使用 `npm create vite@latest . -- --template vue-ts` 建立 Vue 3 + TypeScript 專案
+- 安裝依賴：`tailwindcss`、`pinia`、`vue-router`、`chart.js`、`vue-chartjs`、`@crxjs/vite-plugin`
+
+#### [NEW] manifest.json
+```json
+{
+  "manifest_version": 3,
+  "name": "NerdTimer",
+  "version": "2.0.0",
+  "permissions": ["storage", "tabs", "alarms", "notifications", "activeTab"],
+  "background": { "service_worker": "dist/background.js", "type": "module" },
+  "content_scripts": [{ "matches": ["<all_urls>"], "js": ["dist/content.js"] }],
+  "action": { "default_popup": "index.html", "default_icon": "icons/icon48.png" }
+}
+```
+
+---
+
+### Background Service Worker (`src/background/`)
+
+#### [NEW] `src/types/index.ts`
+共用 TypeScript Interface（`BlockListEntry`、`TimeRecord`、`AppSettings`、`TimerState`、`MessageType`）
+
+#### [NEW] `src/background/services/StorageService.ts`
+- 封裝 `chrome.storage.local`
+- JSON 格式化存取，鍵：`blocklist`、`settings`、`timer`、`timeRecords`
+
+#### [NEW] `src/background/services/BlockEngine.ts`
+- `checkBlock(url)` 演算法：白名單優先 > 鎖定名單
+
+#### [NEW] `src/background/services/TimerService.ts`
+- `chrome.alarms` API 倒數計時
+- Badge 更新（計時中綠色，最後 60 秒紅色）
+
+#### [NEW] `src/background/services/TimeTracker.ts`
+- 記錄各網域每日停留毫秒
+- 換日（00:00）自動歸零
+
+#### [NEW] `src/background/index.ts`
+- Message Handler（Command Pattern 統一處理）
+- 監聽 `chrome.tabs.onUpdated`、`chrome.alarms.onAlarm`
+
+---
+
+### Content Script (`src/content/`)
+
+#### [NEW] `src/content/index.ts`
+- Shadow DOM 封鎖覆蓋層（`BlockerOverlay`）
+- 玻璃擬物樣式（獨立於頁面）
+- Snooze / 本次忽略按鈕互動
+
+---
+
+### Popup SPA (`src/popup/`)
+
+#### [NEW] `src/popup/main.ts` + `src/popup/App.vue`
+- Vue 3 SPA 入口，掛載 Pinia + Vue Router
+
+#### [NEW] `src/popup/router/index.ts`
+- Hash Mode 路由：`/`（首頁）、`/lists`、`/stats`、`/settings`
+
+#### [NEW] `src/popup/stores/`
+- `useBlocklistStore.ts`：名單 CRUD
+- `useSettingsStore.ts`：設定讀寫
+- `useTimerStore.ts`：計時器狀態
+- `useStatsStore.ts`：時間統計資料
+
+#### [NEW] `src/popup/views/`
+- `HomeView.vue`：快速加入名單 + 計時器 + 全域開關
+- `ListsView.vue`：鎖定/白名單管理（Tab 切換，可刪除）
+- `StatsView.vue`：圓餅圖 + 柱狀圖 + 日期選擇（Chart.js）
+- `SettingsView.vue`：折疊式設定 + 匯出/匯入/清除
+
+#### [NEW] `src/popup/components/`
+- `NavBar.vue`：四標籤底部導覽列
+- `GlassCard.vue`：玻璃擬物卡片（共用）
+- `TimerDisplay.vue`：倒數計時器顯示（tabular-nums）
+- `DomainTag.vue`：名單項目標籤（含刪除按鈕）
+
+#### [NEW] `tailwind.config.ts`
+- 淡黃色主色調（`#ffe033` 為主）
+- 玻璃擬物自訂 utilities
+
+---
+
+## Verification Plan
+
+### 建置驗證
+```powershell
+cd j:\desktopp\githut\Limina\app
+npm install
+npm run build
+```
+成功建置後 `dist/` 目錄存在 `manifest.json`、`background.js`、`content.js`、`index.html`
+
+### 手動 Chrome 載入測試
+1. 開啟 `chrome://extensions/`
+2. 啟用「開發人員模式」
+3. 點擊「載入未封裝項目」→ 選取 `app/dist/` 目錄
+4. 確認擴充功能無錯誤出現
+
+### 功能驗證（載入後）
+| 測試項目 | 步驟 |
+|---------|------|
+| 封鎖流程 | 在首頁快速加入 `youtube.com` → 開啟 YouTube → 確認覆蓋層出現 |
+| Snooze | 覆蓋層點擊 Snooze → 確認覆蓋層消失，N 分鐘後重現 |
+| 計時器 | 設定 1 分鐘 → 啟動 → 確認 Badge 出現且倒數 |
+| 名單管理 | 名單頁刪除項目 → 確認立即解除封鎖 |
+| 匯出/匯入 | 設定頁點擊匯出 → 下載 JSON → 清除後匯入 → 確認資料還原 |

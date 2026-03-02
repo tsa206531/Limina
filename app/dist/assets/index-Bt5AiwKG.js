@@ -1,0 +1,1 @@
+const s={isEnabled:!0,snoozeDuration:5,isSnoozeHidden:!1,blockerMessage:"You shall not pass! 🧙‍♂️",installDate:new Date().toISOString().slice(0,10),timerPausesBlocking:!1,showNotifications:!0,language:"auto"},e={isActive:!1,lastInputMin:25};export{e as D,s as a};

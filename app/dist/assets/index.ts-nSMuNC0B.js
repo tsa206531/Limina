@@ -1,0 +1,203 @@
+(function(){(function(){var b;if(document.getElementById("__limina-host__"))return;let r=!1,d=!1;const k={en:{blockedTitle:"Limina blocked this site",snoozeText:e=>`⏱ Snooze for ${e} min`,ignoreText:"Start Focusing!!!!",footer:"Limina 2.0 — Nerd Timer"},"zh-TW":{blockedTitle:"Limina 阻擋了此網站",snoozeText:e=>`⏱ 讓我休息 ${e} 分鐘`,ignoreText:"開始專注!!!!",footer:"Limina 2.0 — 廢宅計時器"},ja:{blockedTitle:"Limina がこのサイトをブロックしました",snoozeText:e=>`⏱ ${e} 分間スヌーズ`,ignoreText:"集中しろ!!!!",footer:"Limina 2.0 — オタクタイマー"}};function z(e="auto"){if(e==="auto"){const t=navigator.language;return t.startsWith("zh")?"zh-TW":t.startsWith("ja")?"ja":"en"}return e||"en"}const o=document.createElement("div");o.id="__limina-host__",o.style.cssText=`
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2147483647;
+    pointer-events: none;
+    display: block;
+  `,document.documentElement.appendChild(o);const n=o.attachShadow({mode:"closed"}),i=document.createElement("div");i.id="nerd-overlay";const p=document.createElement("style");p.textContent=`
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    }
+
+    #nerd-overlay {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      /* 與 App 一致的深色漸層背景，加上強烈毛玻璃 */
+      background: linear-gradient(135deg,
+        rgb(6 30 34 / 0%) 0%,
+        rgb(8 60 72 / 0%) 50%,
+        rgb(6 30 40 / 0%) 100%);
+      backdrop-filter: blur(2px) saturate(80%);
+      -webkit-backdrop-filter: blur(2px) saturate(80%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #nerd-overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* 環境光效果 */
+    #nerd-overlay::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 40%, rgba(8, 131, 150, 0.25) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 70%, rgba(6, 104, 120, 0.2) 0%, transparent 50%);
+      pointer-events: none;
+      animation: ominousBreathe 9s ease-in-out infinite alternate;
+    }
+
+    @keyframes ominousBreathe {
+      0% { opacity: 0.6; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.06); }
+    }
+
+    /* 主卡片：半透明毛玻璃 */
+    .nerd-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(24px) saturate(200%);
+      -webkit-backdrop-filter: blur(24px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(8, 131, 150, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      padding: 40px 36px 36px;
+      height: 60vh;
+      max-width: 700px;
+      width: 92%;
+      text-align: center;
+      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .nerd-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+      display: block;
+      filter: drop-shadow(0 4px 12px rgba(8, 131, 150, 0.5));
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-7px); }
+    }
+
+    .nerd-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(8, 131, 150, 0.9);
+      margin-bottom: 10px;
+    }
+
+    .nerd-message {
+      font-size: 20px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.95);
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+
+    .nerd-domain {
+      font-size: 12px;
+      color: rgba(8, 131, 150, 0.8);
+      margin-bottom: 28px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: rgba(8, 131, 150, 0.12);
+      border: 1px solid rgba(8, 131, 150, 0.25);
+      padding: 4px 14px;
+      border-radius: 99px;
+      display: inline-block;
+    }
+
+    /* 按鈕：左右排列，推至底部 */
+    .nerd-btn-group {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      margin-top: auto;
+      width: 100%;
+    }
+
+    .nerd-btn {
+      flex: 1;
+      padding: 13px 18px;
+      border-radius: 14px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      letter-spacing: 0.01em;
+    }
+
+    .nerd-btn:hover  { transform: translateY(-2px) scale(1.02); }
+    .nerd-btn:active { transform: translateY(0) scale(0.98); }
+
+    /* Snooze：ghost 透明 */
+    .nerd-btn-snooze {
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .nerd-btn-snooze:hover {
+      background: rgba(255, 255, 255, 0.11);
+      color: rgba(255, 255, 255, 0.9);
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    /* Ignore（開始專注）：主色 teal 漸層 */
+    .nerd-btn-ignore {
+      background: linear-gradient(135deg, #088396, #066878);
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(8, 131, 150, 0.45);
+      border: none;
+    }
+    .nerd-btn-ignore:hover {
+      box-shadow: 0 6px 24px rgba(8, 131, 150, 0.65);
+    }
+
+    .nerd-footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: rgba(8, 131, 150, 0.4);
+      letter-spacing: 0.05em;
+    }
+  `,i.innerHTML=`
+    <div class="nerd-card">
+      <span class="nerd-icon">🧙‍♂️</span>
+      <div class="nerd-title" id="nerd-title">Limina blocked this site</div>
+      <div class="nerd-message" id="nerd-msg">You shall not pass!</div>
+      <div class="nerd-domain" id="nerd-domain"></div>
+      <div class="nerd-btn-group" id="nerd-btn-group">
+        <button class="nerd-btn nerd-btn-snooze" id="nerd-btn-snooze">
+          ⏱ Snooze for 5 min
+        </button>
+        <button class="nerd-btn nerd-btn-ignore" id="nerd-btn-ignore">
+          I know, close this
+        </button>
+      </div>
+      <div class="nerd-footer" id="nerd-footer">Limina 2.0</div>
+    </div>
+  `,n.appendChild(p),n.appendChild(i);async function T(){chrome.runtime.sendMessage({type:"GET_SETTINGS"},e=>{if(!(e!=null&&e.success))return;const t=e.data,a=z(t.language),s=k[a],m=n.getElementById("nerd-title"),f=n.getElementById("nerd-msg"),u=n.getElementById("nerd-domain"),x=n.getElementById("nerd-btn-snooze"),h=n.getElementById("nerd-btn-ignore"),y=n.getElementById("nerd-footer");m&&(m.textContent=s.blockedTitle),y&&(y.textContent=s.footer),h&&(h.textContent=s.ignoreText),f&&(f.textContent=t.blockerMessage||"You shall not pass! 🧙‍♂️"),u&&(u.textContent=location.hostname),x&&(x.textContent=s.snoozeText(t.snoozeDuration||5));const v=n.getElementById("nerd-btn-group");v&&(v.style.display=t.isSnoozeHidden?"none":"flex")})}function E(){r||(r=!0,o.style.pointerEvents="all",i.classList.add("visible"),document.body.style.overflow="hidden",T())}function g(){r&&(r=!1,o.style.pointerEvents="none",i.classList.remove("visible"),document.body.style.overflow="")}const l=n.getElementById("nerd-btn-snooze");(b=n.getElementById("nerd-btn-ignore"))==null||b.addEventListener("click",()=>{}),l==null||l.addEventListener("click",()=>{chrome.runtime.sendMessage({type:"GET_SETTINGS"},e=>{var a;const t=((a=e==null?void 0:e.data)==null?void 0:a.snoozeDuration)??5;chrome.runtime.sendMessage({type:"SET_TIMER",minutes:t},()=>{d=!0,g()})})}),chrome.storage.onChanged.addListener(e=>{(e.timerState||e.settings||e.snoozeUntil||e.blocklist)&&(d||c())});function c(){d||chrome.runtime.sendMessage({type:"GET_STATUS",url:location.href},e=>{var t;((t=e==null?void 0:e.data)==null?void 0:t.status)==="locked"?E():g()})}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",c):c()})();
+})()

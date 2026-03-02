@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Extension Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#088396",
+                        "primary-dark": "#066878",
+                        "background-light": "#F2F7F9",
+                        "background-dark": "#102022",
+                        "surface-light": "rgba(255, 255, 255, 0.6)",
+                        "surface-dark": "rgba(26, 43, 48, 0.6)",
+                        "text-main": "#1A2B30",
+                        "text-secondary": "#647A82",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    backdropBlur: {
+                        "xs": "2px",
+                    }
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(100, 122, 130, 0.2);
+            border-radius: 20px;
+        }.glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .dark .glass-card {
+            background: rgba(26, 43, 48, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }.toggle-checkbox:checked {
+            right: 0;
+            border-color: #088396;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #088396;
+        }details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+    </style>
+<style>
+        body {
+          min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-text-main dark:text-gray-100 antialiased min-h-screen flex flex-col overflow-hidden relative">
+<div class="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
+<div class="fixed bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-300/20 dark:bg-blue-900/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+<header class="flex items-center justify-center px-6 pt-12 pb-4 sticky top-0 z-20 glass-card border-b-0 border-b-transparent !bg-surface-light/80 dark:!bg-surface-dark/80 backdrop-blur-md">
+<h1 class="text-lg font-bold text-text-main dark:text-white tracking-tight">Settings</h1>
+</header>
+<main class="flex-1 overflow-y-auto px-4 py-6 pb-24 space-y-6">
+<section class="space-y-3">
+<h3 class="px-2 text-xs font-semibold uppercase tracking-wider text-text-secondary dark:text-gray-400">Quick Actions</h3>
+<div class="glass-card rounded-xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-text-main dark:text-white">Deep Work Mode</span>
+<span class="text-xs text-text-secondary dark:text-gray-400">Block all distractions</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400">
+<span class="material-symbols-outlined">coffee</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-text-main dark:text-white">Break Reminders</span>
+<span class="text-xs text-text-secondary dark:text-gray-400">Every 25 minutes</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-10 h-10 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400">
+<span class="material-symbols-outlined">timer_play</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-text-main dark:text-white">Auto-start Timer</span>
+<span class="text-xs text-text-secondary dark:text-gray-400">On browser launch</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</section>
+<section class="space-y-4">
+<h3 class="px-2 text-xs font-semibold uppercase tracking-wider text-text-secondary dark:text-gray-400">Configuration</h3>
+<details class="group glass-card rounded-xl overflow-hidden transition-all duration-300" open="">
+<summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400">tune</span>
+<span class="font-medium text-text-main dark:text-white">General</span>
+</div>
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-white/20 dark:border-white/5 space-y-4 bg-white/20 dark:bg-black/10">
+<div class="flex items-center justify-between">
+<span class="text-sm text-text-main dark:text-gray-200">Theme</span>
+<select class="bg-transparent text-sm text-primary font-medium focus:outline-none cursor-pointer">
+<option>System Default</option>
+<option>Light</option>
+<option>Dark</option>
+</select>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-sm text-text-main dark:text-gray-200">Language</span>
+<span class="text-sm text-text-secondary dark:text-gray-400 flex items-center gap-1">English <span class="material-symbols-outlined text-sm">chevron_right</span></span>
+</div>
+</div>
+</details>
+<details class="group glass-card rounded-xl overflow-hidden transition-all duration-300">
+<summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400">notifications</span>
+<span class="font-medium text-text-main dark:text-white">Notifications</span>
+</div>
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-white/20 dark:border-white/5 space-y-4 bg-white/20 dark:bg-black/10">
+<div class="flex items-center justify-between">
+<span class="text-sm text-text-main dark:text-gray-200">Sound Effects</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-sm text-text-main dark:text-gray-200">Daily Summary</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</details>
+<details class="group glass-card rounded-xl overflow-hidden transition-all duration-300">
+<summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400">account_circle</span>
+<span class="font-medium text-text-main dark:text-white">Account</span>
+</div>
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-white/20 dark:border-white/5 space-y-4 bg-white/20 dark:bg-black/10">
+<div class="flex items-center gap-4 mb-2">
+<img class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" data-alt="User profile picture avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmZxefhqMsJdhEOwOp7gBQxsuWW3XSGcBYjo5dlYKathcBGhieSre1rty9cDQXwqT74ST5xTf52WvybBCPkEbPxemMFxoPEVrhvkxNDisENYdnAZZu0Ri51lM4HunOrX1AVlmlIvZQWiOmeDta7H_PYVQjGB9MbLp0wy2UvVea32gAtS78xwW-Zu51xj5ZVYLNoJAD1P-WUX2f04WktvIYcKCDfqKFMOVIIoFCrXnbPjurt8F7iRwpbVJIYAekG6oPo4aYO3yMH88"/>
+<div>
+<p class="text-sm font-semibold text-text-main dark:text-white">Alex Morgan</p>
+<p class="text-xs text-text-secondary dark:text-gray-400">Pro Plan Active</p>
+</div>
+</div>
+<button class="w-full py-2 text-sm text-primary font-medium hover:bg-primary/10 rounded-lg transition-colors">Manage Subscription</button>
+<button class="w-full py-2 text-sm text-red-500 font-medium hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">Sign Out</button>
+</div>
+</details>
+<details class="group glass-card rounded-xl overflow-hidden transition-all duration-300">
+<summary class="flex items-center justify-between p-4 cursor-pointer select-none bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400">settings_suggest</span>
+<span class="font-medium text-text-main dark:text-white">Advanced</span>
+</div>
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-white/20 dark:border-white/5 space-y-4 bg-white/20 dark:bg-black/10">
+<div class="flex items-center justify-between cursor-pointer">
+<span class="text-sm text-text-main dark:text-gray-200">Export Data</span>
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 text-lg">download</span>
+</div>
+<div class="flex items-center justify-between cursor-pointer">
+<span class="text-sm text-text-main dark:text-gray-200">Clear Cache</span>
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 text-lg">delete_sweep</span>
+</div>
+<div class="pt-2">
+<p class="text-[10px] text-center text-text-secondary dark:text-gray-500">Version 2.4.0 (Build 394)</p>
+</div>
+</div>
+</details>
+</section>
+</main>
+<nav class="fixed bottom-0 w-full glass-card border-t border-white/50 dark:border-white/10 pb-6 pt-2 px-6 flex justify-between items-end z-30 !rounded-t-2xl !rounded-b-none shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center gap-1 group w-16" href="#">
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-2xl">house</span>
+<span class="text-[10px] font-medium text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 group w-16" href="#">
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-2xl">shield</span>
+<span class="text-[10px] font-medium text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors">Blocklist</span>
+</a>
+<a class="flex flex-col items-center gap-1 group w-16" href="#">
+<span class="material-symbols-outlined text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors text-2xl">bar_chart</span>
+<span class="text-[10px] font-medium text-text-secondary dark:text-gray-400 group-hover:text-primary transition-colors">Stats</span>
+</a>
+<a class="flex flex-col items-center gap-1 group w-16" href="#">
+<div class="relative">
+<span class="material-symbols-outlined text-primary dark:text-primary text-2xl fill-current" style="font-variation-settings: 'FILL' 1;">settings</span>
+</div>
+<span class="text-[10px] font-medium text-primary dark:text-primary transition-colors">Settings</span>
+</a>
+</nav>
+</body></html>

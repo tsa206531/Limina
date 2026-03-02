@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Website Blocklist Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#088396",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102022",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        lg: "1rem",
+                        xl: "1.5rem",
+                        "2xl": "2rem",
+                        full: "9999px"
+                    },
+                    backgroundImage: {
+                        'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1))',
+                        'glass-gradient-dark': 'linear-gradient(135deg, rgba(16, 32, 34, 0.6), rgba(16, 32, 34, 0.3))',
+                    }
+                },
+            },
+        }
+    </script>
+<style>.glass {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass {
+            background: rgba(16, 32, 34, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glass-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.3));
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        }
+        .dark .glass-card {
+            background: linear-gradient(145deg, rgba(30, 45, 48, 0.6), rgba(16, 32, 34, 0.4));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }.ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background-color: #f5f8f8;
+        }
+        .dark .ambient-bg {
+            background-color: #102022;
+        }
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+        }
+        .blob-1 {
+            top: -10%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: #088396;
+            opacity: 0.2;
+        }
+        .blob-2 {
+            bottom: -10%;
+            left: -10%;
+            width: 350px;
+            height: 350px;
+            background: #4fd1c5;
+            opacity: 0.15;
+        }
+        .blob-3 {
+            top: 40%;
+            left: 20%;
+            width: 200px;
+            height: 200px;
+            background: #81e6d9;
+            opacity: 0.1;
+        }
+    </style>
+<style>
+        body {
+          min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display text-slate-900 dark:text-slate-100 antialiased selection:bg-primary selection:text-white">
+<div class="ambient-bg">
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+</div>
+<div class="relative flex h-screen w-full flex-col overflow-hidden max-w-md mx-auto shadow-2xl bg-transparent">
+<div class="flex items-center justify-between px-4 pt-6 pb-2 glass z-20 shrink-0">
+<div class="w-10"></div>
+<h2 class="text-lg font-bold leading-tight tracking-tight flex-1 text-center">Blocklist</h2>
+<button class="flex items-center justify-end text-primary font-semibold text-base hover:text-primary/80 transition-colors w-10">Save</button>
+</div>
+<div class="px-4 py-4 z-10 shrink-0">
+<div class="glass-card rounded-xl flex items-center p-1 group focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+<div class="pl-3 pr-2 text-slate-400 dark:text-slate-500 flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-size: 20px;">add_link</span>
+</div>
+<input class="w-full bg-transparent border-none focus:ring-0 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-base py-2" placeholder="Add a website to block..." type="text"/>
+<button class="bg-primary hover:bg-primary/90 text-white rounded-lg p-2 m-1 shadow-md transition-transform active:scale-95">
+<span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+</button>
+</div>
+</div>
+<div class="px-4 pb-2 z-10 shrink-0">
+<div class="glass-card p-1 rounded-xl flex relative">
+<button class="flex-1 py-2 text-center text-sm font-semibold rounded-lg bg-white/80 dark:bg-white/10 text-slate-900 dark:text-white shadow-sm transition-all">
+                    Blocked
+                </button>
+<button class="flex-1 py-2 text-center text-sm font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all">
+                    Whitelist
+                </button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-4 pb-24 space-y-3 z-0 scrollbar-hide">
+<div class="glass-card rounded-2xl p-3 flex items-center justify-between group">
+<div class="flex items-center gap-3 overflow-hidden">
+<div class="bg-white p-1.5 rounded-xl shadow-sm shrink-0">
+<img alt="Facebook logo" class="size-6 object-contain" data-alt="Facebook icon blue f" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4mRBjuBlJhrHTFohrWBlZEHQeZ9EDs4xw0uFBOFK92comxN-mCL-Gg602XGvRHEU4XX7BAW_mwGRJ7_VDC_ZSFY67aY-Y3rwpInv4tWhMP5Gr4NwWuAmRWqDVcg1pu2pknUtK10sHA_b0ogBDIwGFQLoyqalslLFWDXwvOMJUNkW_cMpxvvq-xSgQG2nRUvLVNnqlUMaNLmIkD0C-Y-67kmPEF47X4IK_Or1UJXDTU8MXCt9YC5crm-AoVX3beU5qhmjyVDmIFVE"/>
+</div>
+<div class="flex flex-col min-w-0">
+<p class="text-slate-800 dark:text-slate-100 text-base font-semibold truncate leading-tight">facebook.com</p>
+<p class="text-slate-400 dark:text-slate-500 text-xs truncate">Social Media</p>
+</div>
+</div>
+<button class="size-8 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+</button>
+</div>
+<div class="glass-card rounded-2xl p-3 flex items-center justify-between group">
+<div class="flex items-center gap-3 overflow-hidden">
+<div class="bg-white p-1.5 rounded-xl shadow-sm shrink-0">
+<img alt="Instagram logo" class="size-6 object-contain" data-alt="Instagram camera gradient icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAozEgtQevYcua4QSqcyEvRJfFoP006qs1X44gbEvyi8bz9_MhlxEQtCBA6u909l2AjEo7_8NN2isZJv_mG2gE8Ck6yJN1M0rg8ll3dIbo2_ui_opRSUq2SyRPlowivVYWqhGUnBA3dO0HC0Nm133-NQtLJBQZdqXLGQRmU47a9G1OVZCQvt9UlD397fxgXrWmKqOO1BJ-Cg-kXpjpKDmTNJv-hMugoKxbTQ8IGvibUnRYlitCJnaPVPBhsSUtFLESw9xdOavH5gwo"/>
+</div>
+<div class="flex flex-col min-w-0">
+<p class="text-slate-800 dark:text-slate-100 text-base font-semibold truncate leading-tight">instagram.com</p>
+<p class="text-slate-400 dark:text-slate-500 text-xs truncate">Social Media</p>
+</div>
+</div>
+<button class="size-8 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+</button>
+</div>
+<div class="glass-card rounded-2xl p-3 flex items-center justify-between group">
+<div class="flex items-center gap-3 overflow-hidden">
+<div class="bg-white p-1.5 rounded-xl shadow-sm shrink-0">
+<img alt="Twitter X logo" class="size-6 object-contain" data-alt="Twitter bird blue icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKm88OkMNNf60EVK4zuG27OPQDyKeOI9-SVS9p80i7yHpZ139AWrmBkix6agKOx0xMNi7VqfLnkIsFj-2c-pc0ZTJMtsv4U7zzCq1eqJmFMfN6QdmJ8cCh8oQ5QpUmUDTyJkaCwUOftdaX1UpWgofLk3_hYaeZmmNqBLVzAuoxOdKjCPT_F1XsltcvpWaJaQfxx1DDsjagew3KPm5uJuHuReytwwuYjlHTqukza0WyyFwvGjm9p_Tl9anXIah5PnPg6MQC7bcw4dE"/>
+</div>
+<div class="flex flex-col min-w-0">
+<p class="text-slate-800 dark:text-slate-100 text-base font-semibold truncate leading-tight">twitter.com</p>
+<p class="text-slate-400 dark:text-slate-500 text-xs truncate">Social Media</p>
+</div>
+</div>
+<button class="size-8 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+</button>
+</div>
+<div class="glass-card rounded-2xl p-3 flex items-center justify-between group">
+<div class="flex items-center gap-3 overflow-hidden">
+<div class="bg-white p-1.5 rounded-xl shadow-sm shrink-0">
+<img alt="Youtube logo" class="size-6 object-contain" data-alt="Youtube play button red" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqAA3At_Yj-tJ4nTg_rkqPYHPVCSuSOtKdd2RnhOKOdcLmV5AwYa1pKg8c59xKdrGzeXd5fviRHf0fqMkIvzr5RBbhep6a7ObU8ylnqIXF9CPxd7lVmfHsxfuRqQFrFwlCfy8XyxvMRL5prEXudC7VfJd6u0X1itzHfow48NKaSne5bf5O28MNl9BaWOs886dKgH2ZZSH2Y334GNb4194ev_YPyTGB8ot7PPFyceCs7hYHcSB73fKYAJVZb0TsnjCb-W-N-ujSso4"/>
+</div>
+<div class="flex flex-col min-w-0">
+<p class="text-slate-800 dark:text-slate-100 text-base font-semibold truncate leading-tight">youtube.com</p>
+<p class="text-slate-400 dark:text-slate-500 text-xs truncate">Video Streaming</p>
+</div>
+</div>
+<button class="size-8 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+</button>
+</div>
+<div class="glass-card rounded-2xl p-3 flex items-center justify-between group">
+<div class="flex items-center gap-3 overflow-hidden">
+<div class="bg-white p-1.5 rounded-xl shadow-sm shrink-0">
+<img alt="Netflix logo" class="size-6 object-contain" data-alt="Netflix red N icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFRyHTcQ0Ixd2w4CYquCXJQAUwLoe4rGL4966D9MJrADKSaPMI_ALzSRLOvWy-NjTqgJN1quprbzi8_4PJNNbSVX6Se1exWuj5aFSAUCon2thajouuYqHOJSNAzTkIcNhaLv02_a9vZVi1HihIVjuSS2dsFYoTs0K2fehpLlgVeyCwZjmgAYlLqrNMuDuDNhwVZsfL-0q_RkR0M_i_zQxTkum6UluLJf7UhaFsZnlejwPubHAKPCJ4AcY75JLc_5m7D4gw69xJKKc"/>
+</div>
+<div class="flex flex-col min-w-0">
+<p class="text-slate-800 dark:text-slate-100 text-base font-semibold truncate leading-tight">netflix.com</p>
+<p class="text-slate-400 dark:text-slate-500 text-xs truncate">Entertainment</p>
+</div>
+</div>
+<button class="size-8 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+</button>
+</div>
+<div class="h-10"></div>
+</div>
+<div class="absolute bottom-0 w-full glass z-30 pb-6 pt-3 px-6 rounded-t-3xl border-t border-white/40 dark:border-white/5 shadow-[0_-5px_30px_rgba(0,0,0,0.05)]">
+<div class="flex justify-between items-end">
+<a class="flex flex-col items-center gap-1 group w-16" href="#">
+<div class="text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 26px;">home</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 group w-16" href="#">
+<div class="text-primary bg-primary/10 dark:bg-primary/20 p-2 rounded-2xl shadow-inner ring-1 ring-primary/20 -mt-2">
+<span class="material-symbols-outlined filled" style="font-variation-settings: 'FILL' 1; font-size: 26px;">shield</span>
+</div>
+<span class="text-[10px] font-bold text-primary">Blocklist</span>
+</a>
+<a class="flex flex-col items-center gap-1 group w-16" href="#">
+<div class="text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 26px;">bar_chart</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Stats</span>
+</a>
+<a class="flex flex-col items-center gap-1 group w-16" href="#">
+<div class="text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-size: 26px;">settings</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Settings</span>
+</a>
+</div>
+</div>
+</div>
+</body></html>

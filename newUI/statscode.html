@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Usage Statistics Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#088396",
+                        "primary-dark": "#066878",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102022",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "3xl": "2.5rem",
+                        "full": "9999px"
+                    },
+                    backgroundImage: {
+                        'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1))',
+                        'glass-gradient-dark': 'linear-gradient(135deg, rgba(16, 32, 34, 0.6), rgba(16, 32, 34, 0.3))',
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        }
+        .dark .glass-panel {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }.no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased min-h-screen relative overflow-hidden selection:bg-primary/30">
+<div class="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[100px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-teal-400/20 blur-[120px] pointer-events-none z-0"></div>
+<div class="fixed top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-blue-300/20 blur-[80px] pointer-events-none z-0"></div>
+<div class="relative z-10 flex flex-col h-full min-h-screen w-full max-w-md mx-auto bg-transparent pb-24">
+<header class="flex items-center justify-center relative px-6 pt-12 pb-4">
+<h1 class="text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100">Usage Statistics</h1>
+<button class="absolute right-6 flex items-center justify-center w-10 h-10 rounded-full glass-panel bg-white/40 dark:bg-black/20 hover:bg-white/60 transition-colors">
+<span class="material-symbols-outlined text-slate-800 dark:text-slate-200">more_horiz</span>
+</button>
+</header>
+<div class="px-6 mb-6">
+<div class="flex p-1 rounded-2xl glass-panel bg-white/30 dark:bg-white/5">
+<button class="flex-1 py-2 text-sm font-medium rounded-xl bg-white dark:bg-slate-700 shadow-sm text-primary transition-all">Today</button>
+<button class="flex-1 py-2 text-sm font-medium rounded-xl text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">7 Days</button>
+<button class="flex-1 py-2 text-sm font-medium rounded-xl text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">Custom</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto no-scrollbar px-6 space-y-6">
+<div class="glass-panel bg-glass-gradient dark:bg-glass-gradient-dark rounded-3xl p-6 relative overflow-hidden">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h2 class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Total Screen Time</h2>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-bold text-slate-800 dark:text-slate-100">5h 30m</span>
+<span class="text-xs font-semibold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">▼ 12%</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">pie_chart</span>
+</div>
+</div>
+<div class="flex items-center justify-center py-4 relative">
+<div class="w-48 h-48 rounded-full border-[16px] border-slate-100 dark:border-slate-800 relative flex items-center justify-center" style="background: conic-gradient(var(--tw-colors-primary) 0% 55%, #38bdf8 55% 80%, #fbbf24 80% 100%); border-radius: 50%;">
+<div class="w-28 h-28 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-full absolute flex flex-col items-center justify-center shadow-inner">
+<span class="text-xs text-slate-400">Most Used</span>
+<span class="font-bold text-primary text-lg">Work</span>
+</div>
+</div>
+</div>
+<div class="flex justify-around mt-6 pt-4 border-t border-slate-200/30 dark:border-slate-700/30">
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="text-xs font-medium text-slate-600 dark:text-slate-300">Work</span>
+</div>
+<span class="text-sm font-bold text-slate-800 dark:text-slate-100">55%</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-sky-400"></div>
+<span class="text-xs font-medium text-slate-600 dark:text-slate-300">Social</span>
+</div>
+<span class="text-sm font-bold text-slate-800 dark:text-slate-100">25%</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-amber-400"></div>
+<span class="text-xs font-medium text-slate-600 dark:text-slate-300">Fun</span>
+</div>
+<span class="text-sm font-bold text-slate-800 dark:text-slate-100">20%</span>
+</div>
+</div>
+</div>
+<div class="glass-panel bg-glass-gradient dark:bg-glass-gradient-dark rounded-3xl p-6">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Daily Focus Trends</h2>
+<span class="text-xs font-medium text-slate-500 bg-white/50 dark:bg-slate-800/50 px-3 py-1 rounded-lg">Avg 6.5h</span>
+</div>
+<div class="h-40 flex items-end justify-between gap-3 px-2">
+<div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+<div class="relative w-full bg-slate-200/50 dark:bg-slate-700/30 rounded-t-lg h-32 overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg transition-all duration-500 group-hover:bg-primary-dark" style="height: 45%;"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-500 group-hover:text-primary transition-colors">Mon</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+<div class="relative w-full bg-slate-200/50 dark:bg-slate-700/30 rounded-t-lg h-32 overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg transition-all duration-500 group-hover:bg-primary-dark" style="height: 60%;"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-500 group-hover:text-primary transition-colors">Tue</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+<div class="relative w-full bg-slate-200/50 dark:bg-slate-700/30 rounded-t-lg h-32 overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg transition-all duration-500 group-hover:bg-primary-dark" style="height: 35%;"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-500 group-hover:text-primary transition-colors">Wed</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+<div class="relative w-full bg-slate-200/50 dark:bg-slate-700/30 rounded-t-lg h-32 overflow-hidden">
+<div class="absolute -top-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] bg-slate-800 text-white px-1.5 rounded mb-1">8h</div>
+<div class="absolute bottom-0 w-full bg-gradient-to-t from-primary to-cyan-400 rounded-t-lg transition-all duration-500" style="height: 85%;"></div>
+</div>
+<span class="text-[10px] font-bold text-primary">Thu</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+<div class="relative w-full bg-slate-200/50 dark:bg-slate-700/30 rounded-t-lg h-32 overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-lg transition-all duration-500 group-hover:bg-primary-dark" style="height: 50%;"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-500 group-hover:text-primary transition-colors">Fri</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+<div class="relative w-full bg-slate-200/50 dark:bg-slate-700/30 rounded-t-lg h-32 overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/60 rounded-t-lg transition-all duration-500 group-hover:bg-primary" style="height: 20%;"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-500 group-hover:text-primary transition-colors">Sat</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1 group cursor-pointer">
+<div class="relative w-full bg-slate-200/50 dark:bg-slate-700/30 rounded-t-lg h-32 overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/60 rounded-t-lg transition-all duration-500 group-hover:bg-primary" style="height: 15%;"></div>
+</div>
+<span class="text-[10px] font-medium text-slate-500 group-hover:text-primary transition-colors">Sun</span>
+</div>
+</div>
+</div>
+<div class="glass-panel bg-glass-gradient dark:bg-glass-gradient-dark rounded-3xl p-6">
+<h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Top Sites</h2>
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3 pb-3 border-b border-slate-200/50 dark:border-slate-700/50 last:border-0 last:pb-0">
+<div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+<span class="material-symbols-outlined text-xl">work</span>
+</div>
+<div class="flex-1">
+<h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Figma</h3>
+<p class="text-xs text-slate-500">Design Tool</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-slate-800 dark:text-slate-200">2h 14m</p>
+<div class="w-16 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-blue-500 w-[70%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 pb-3 border-b border-slate-200/50 dark:border-slate-700/50 last:border-0 last:pb-0">
+<div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500">
+<span class="material-symbols-outlined text-xl">play_circle</span>
+</div>
+<div class="flex-1">
+<h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">YouTube</h3>
+<p class="text-xs text-slate-500">Entertainment</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-slate-800 dark:text-slate-200">1h 30m</p>
+<div class="w-16 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-red-500 w-[45%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 pb-3 border-b border-slate-200/50 dark:border-slate-700/50 last:border-0 last:pb-0">
+<div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500">
+<span class="material-symbols-outlined text-xl">code</span>
+</div>
+<div class="flex-1">
+<h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">GitHub</h3>
+<p class="text-xs text-slate-500">Developer</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-slate-800 dark:text-slate-200">45m</p>
+<div class="w-16 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-indigo-500 w-[25%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="h-10 w-full"></div>
+</div>
+<div class="fixed bottom-0 left-0 w-full z-50 px-6 pb-6 pt-0">
+<div class="max-w-md mx-auto">
+<nav class="glass-panel bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl h-16 flex items-center justify-around px-2 shadow-xl shadow-primary/5 dark:shadow-black/40">
+<a class="flex flex-col items-center justify-center gap-1 h-full w-14 text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">house</span>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 h-full w-14 text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">shield</span>
+<span class="text-[10px] font-medium">Blocklist</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 h-full w-14 text-primary relative" href="#">
+<div class="absolute -top-3 w-8 h-1 bg-primary rounded-b-lg shadow-[0_0_10px_rgba(8,131,150,0.5)]"></div>
+<span class="material-symbols-outlined text-2xl font-variation-settings-fill">bar_chart</span>
+<span class="text-[10px] font-medium">Stats</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 h-full w-14 text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-primary transition-colors group" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</body></html>

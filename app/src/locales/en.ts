@@ -1,0 +1,85 @@
+export default {
+  common: {
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    loading: 'Loading...',
+    on: 'ON',
+    off: 'OFF'
+  },
+  nav: {
+    home: 'Home',
+    blocklist: 'Blocklist',
+    stats: 'Stats',
+    settings: 'Settings'
+  },
+  home: {
+    title: 'Focus Mode',
+    globalProtection: 'Global Protection',
+    current: 'Current',
+    none: 'none',
+    focusing: 'Focusing',
+    minutes: 'Minutes',
+    reset: 'Reset',
+    addTime: '+5m',
+    quickActions: 'Quick Actions',
+    lockSite: 'Lock Site',
+    allowSite: 'Allow Site',
+    lockedMsg: 'Locked {domain}',
+    allowedMsg: 'Allowed {domain}',
+    alreadyInList: 'Already in list'
+  },
+  blocklist: {
+    title: 'Blocklist',
+    addDomain: 'Enter domain (e.g., youtube.com)',
+    blocked: 'Blocked',
+    whitelisted: 'Whitelisted',
+    emptyBlocked: 'No blocked sites yet.',
+    emptyWhitelisted: 'No whitelisted sites yet.'
+  },
+  stats: {
+    title: 'Statistics',
+    todayOptions: {
+      today: 'Today',
+      days7: '7 Days',
+      days30: '30 Days'
+    },
+    totalScreenTime: 'Total Screen Time',
+    dailyFocusTrends: 'Daily Focus Trends',
+    topSites: 'Top Sites',
+    emptyTopSites: 'No data for today yet.',
+    timeFormat: {
+      h: 'h',
+      m: 'm'
+    }
+  },
+  settings: {
+    title: 'Settings',
+    blockBehavior: 'Block Behavior',
+    snoozeDuration: 'Snooze Duration',
+    snoozeDesc: 'Minutes to temporarily ignore blocks',
+    strictMode: 'Strict Mode',
+    strictDesc: 'Hide snooze and ignore buttons on blocked pages',
+    notifications: 'Notifications',
+    timerAlerts: 'Timer Alerts',
+    timerAlertsDesc: 'Get notified when your focus timer finishes',
+    blockerMessage: 'Blocker Message',
+    customMessage: 'Custom message displayed on blocked pages',
+    advanced: 'Advanced',
+    language: 'Language',
+    exportData: 'Export Data',
+    importData: 'Import Data',
+    clearAll: 'Clear All Data',
+    clearDesc: 'This will delete all stats and settings permanently.',
+    clearWarningTitle: 'Clear all data?',
+    clearWarningBody: 'This action cannot be undone. All your statistics and blocked sites will be lost permanently.',
+    confirmDelete: 'Yes, delete everything'
+  },
+  overlay: {
+    title: 'Limina blocked this website',
+    defaultMessage: 'You shall not pass! 🧙‍♂️',
+    snooze: '⏱ Let me rest for {min} minutes',
+    ignore: 'Got it, close reminder',
+    footer: 'Limina 2.0 — Productivity Timer'
+  }
+}
