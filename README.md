@@ -14,7 +14,7 @@
 
 ---
 
-![img](img\02.jpg)
+![img](img/02.jpg)
 
 ## 📖 關於 Limina
 
