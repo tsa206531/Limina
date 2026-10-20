@@ -16,24 +16,22 @@ export const useSettingsStore = defineStore('settings', () => {
     if (!force && lastFetchedAt.value && Date.now() - lastFetchedAt.value < CACHE_TTL) return
 
     loading.value = true
-    return new Promise<void>((resolve) => {
-      chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (res) => {
-        if (res?.success) {
-          settings.value = { ...DEFAULT_SETTINGS, ...res.data }
-          lastFetchedAt.value = Date.now()
-        }
-        loading.value = false
-        resolve()
-      })
-    })
+    const res = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }).catch(() => undefined)
+    if (res?.success) {
+      settings.value = { ...DEFAULT_SETTINGS, ...res.data }
+      lastFetchedAt.value = Date.now()
+    }
+    loading.value = false
   }
 
-  async function update(patch: Partial<AppSettings>) {
+  /** 樂觀更新；回傳是否成功寫入 */
+  async function update(patch: Partial<AppSettings>): Promise<boolean> {
     settings.value = { ...settings.value, ...patch }
-    lastFetchedAt.value = Date.now() // 更新快取時間戳
-    return new Promise<void>((resolve) => {
-      chrome.runtime.sendMessage({ type: 'UPDATE_SETTINGS', settings: patch }, () => resolve())
-    })
+    lastFetchedAt.value = Date.now()
+    const res = await chrome.runtime
+      .sendMessage({ type: 'UPDATE_SETTINGS', settings: patch })
+      .catch(() => undefined)
+    return Boolean(res?.success)
   }
 
   /** 強制使快取失效（供外部觸發用） */

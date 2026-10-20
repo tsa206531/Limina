@@ -5,102 +5,124 @@ import { checkBlockWithTimer } from './services/BlockEngine'
 import { TimerService } from './services/TimerService'
 import { TimeTracker } from './services/TimeTracker'
 import { StorageService } from './services/StorageService'
-import type { MessageType, MessageResponse } from '@/types'
+import { updateBadge } from './services/BadgeService'
+import { localDateKey } from '@/utils/date'
+import { SNOOZE_MAX, SNOOZE_MIN, TIMER_MAX, TIMER_MIN, clampInt } from '@/types'
+import type { AppSettings, MessageType, MessageResponse } from '@/types'
+
+const ALARM_TRACKER = 'nerd-time-tracker'
+const ALARM_DAY_CHANGE = 'nerd-day-change'
+const ALARM_SNOOZE = 'nerd-snooze'
 
 // ── 1. 啟動初始化 ───────────────────────────────────────────
-chrome.runtime.onInstalled.addListener(async () => {
-  // 設定預設值
-  const settings = await StorageService.getSettings()
-  if (!settings.installDate) {
-    await StorageService.updateSettings({
-      installDate: new Date().toISOString().slice(0, 10),
+
+/** 確保常駐 alarm 存在；SW 每次啟動都會執行（alarm 可能被清除或尚未建立） */
+async function ensureAlarms(): Promise<void> {
+  if (!(await chrome.alarms.get(ALARM_TRACKER))) {
+    await chrome.alarms.create(ALARM_TRACKER, { periodInMinutes: 1 })
+  }
+  if (!(await chrome.alarms.get(ALARM_DAY_CHANGE))) {
+    const midnight = new Date()
+    midnight.setHours(24, 0, 0, 0)
+    await chrome.alarms.create(ALARM_DAY_CHANGE, {
+      when: midnight.getTime(),
+      periodInMinutes: 24 * 60,
     })
   }
+}
+void ensureAlarms()
+chrome.idle.setDetectionInterval(60)
 
-  // 確保安裝時立即設定 tick
-  chrome.alarms.create('nerd-time-tracker', { periodInMinutes: 1 })
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  const stored = (await chrome.storage.local.get('settings')).settings as
+    | Partial<AppSettings>
+    | undefined
+  const patch: Partial<AppSettings> = {}
 
+  if (!stored?.installDate) patch.installDate = localDateKey()
+
+  // 舊版的「嚴格模式」同時代表「計時中僅允許白名單」，升級時保留原本行為
+  if (reason === 'update' && stored?.isSnoozeHidden && stored.focusWhitelistOnly === undefined) {
+    patch.focusWhitelistOnly = true
+  }
+
+  if (Object.keys(patch).length > 0) await StorageService.updateSettings(patch)
+  await ensureAlarms()
+  await TimeTracker.refresh()
   console.log('[Limina] Service Worker installed')
 })
 
-// 當 SW 喚醒時（例如瀏覽器重開），確保 alarm 存在
-chrome.runtime.onStartup.addListener(() => {
-  chrome.alarms.get('nerd-time-tracker', (alarm) => {
-    if (!alarm) {
-      chrome.alarms.create('nerd-time-tracker', { periodInMinutes: 1 })
-    }
-  })
+chrome.runtime.onStartup.addListener(async () => {
+  await ensureAlarms()
+  await updateBadge()
+  await TimeTracker.refresh()
 })
 
-// ── 2. Tab 監聽：封鎖判斷 + 時間記錄 ──────────────────────
+// ── 2. Tab / 視窗 / 閒置監聽：時間記錄 + SPA 換頁封鎖判斷 ──────
+chrome.tabs.onActivated.addListener(() => {
+  void TimeTracker.refresh()
+})
+
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status !== 'complete' || !tab.url) return
-  const url = tab.url
-  if (!url.startsWith('http')) return
+  if (tab.active && (changeInfo.url || changeInfo.status === 'complete')) {
+    void TimeTracker.refresh()
+  }
 
-  // 時間記錄：切換到新頁面
-  TimeTracker.start(tabId, url)
-
-  // 封鎖判斷
-  const status = await checkBlockWithTimer(url)
-  chrome.tabs.sendMessage(tabId, { type: 'BLOCK_STATUS', status }).catch(() => {
-    // Content script 尚未就緒，忽略錯誤
-  })
-})
-
-chrome.tabs.onActivated.addListener(async ({ tabId }) => {
-  const tab = await chrome.tabs.get(tabId).catch(() => null)
-  if (!tab?.url || !tab.url.startsWith('http')) return
-
-  await TimeTracker.switch(tabId, tab.url)
-
-  const status = await checkBlockWithTimer(tab.url)
-  chrome.tabs.sendMessage(tabId, { type: 'BLOCK_STATUS', status }).catch(() => {})
-})
-
-chrome.tabs.onRemoved.addListener(async (tabId) => {
-  await TimeTracker.stop(tabId)
-})
-
-// ── 3. Alarms：計時器 Tick + 換日 ─────────────────────────
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'limina-done') {
-    // 安全保護：若 tick 沒有偵測到歸零（精度問題），由此觸發
-    const state = await StorageService.getTimerState()
-    if (state.isActive) {
-      // 仍處於 active 表示 tick 沒觸發 done，手動處理
-      await TimerService.done()
-    }
-    // 若 isActive 已是 false，代表 tick 已處理完畢，略過
-  } else if (alarm.name === 'nerd-snooze') {
-    // Snooze 到期：清除全域 snooze，Content script 會自動透過 storage onChanged 感知並恢復（或解除）覆蓋層
-    await StorageService.clearSnooze()
-    chrome.action.setBadgeText({ text: '' })
-  } else if (alarm.name === 'nerd-day-change') {
-    await TimeTracker.handleDayChange()
-  } else if (alarm.name === 'nerd-time-tracker') {
-    // 定期將記憶體中的停留時間寫入 Storage，避免 SW 休眠或被殺死時丟失
-    await TimeTracker.flush()
+  // SPA（history.pushState）換頁不會重新注入 content script，主動通知重新判斷
+  if (changeInfo.url && changeInfo.url.startsWith('http')) {
+    const status = await checkBlockWithTimer(changeInfo.url)
+    chrome.tabs.sendMessage(tabId, { type: 'BLOCK_STATUS', status }).catch(() => {
+      // Content script 尚未就緒，載入後會自行查詢
+    })
   }
 })
 
-// 設定換日 alarm
-async function scheduleDayChange(): Promise<void> {
-  const now = new Date()
-  const midnight = new Date(now)
-  midnight.setHours(24, 0, 0, 0)
-  const minutesUntilMidnight = (midnight.getTime() - now.getTime()) / 60000
-  await chrome.alarms.create('nerd-day-change', {
-    delayInMinutes: minutesUntilMidnight,
-    periodInMinutes: 24 * 60,
-  })
-}
-scheduleDayChange()
+chrome.tabs.onRemoved.addListener(() => {
+  void TimeTracker.refresh()
+})
+
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) void TimeTracker.stop()
+  else void TimeTracker.refresh()
+})
+
+chrome.idle.onStateChanged.addListener((state) => {
+  if (state === 'active') void TimeTracker.refresh()
+  else void TimeTracker.stop()
+})
+
+// ── 3. Alarms：計時器 + Snooze + 換日 + 定期 flush ─────────────
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  switch (alarm.name) {
+    case 'limina-done': {
+      const state = await StorageService.getTimerState()
+      if (state.isActive) await TimerService.done()
+      break
+    }
+    case ALARM_SNOOZE: {
+      // Content script 會透過 storage.onChanged 感知並恢復覆蓋層
+      await StorageService.clearSnooze()
+      await updateBadge()
+      break
+    }
+    case ALARM_DAY_CHANGE: {
+      // 跨午夜的時間已由 TimeTracker 切分，這裡只確保資料寫入
+      await TimeTracker.flush()
+      break
+    }
+    case ALARM_TRACKER: {
+      // 定期將停留時間寫入 Storage，並更新 badge 剩餘分鐘
+      await TimeTracker.flush()
+      await updateBadge()
+      break
+    }
+  }
+})
 
 // ── 4. Message Handler（Command Pattern）──────────────────
 chrome.runtime.onMessage.addListener(
-  (message: MessageType, _sender, sendResponse) => {
-    handleMessage(message)
+  (message: MessageType, sender, sendResponse) => {
+    handleMessage(message, sender)
       .then((res) => sendResponse(res))
       .catch((err) =>
         sendResponse({ success: false, error: String(err) } as MessageResponse),
@@ -111,6 +133,7 @@ chrome.runtime.onMessage.addListener(
 
 async function handleMessage(
   msg: MessageType,
+  sender: chrome.runtime.MessageSender,
 ): Promise<MessageResponse> {
   switch (msg.type) {
     case 'GET_STATUS': {
@@ -135,8 +158,8 @@ async function handleMessage(
     }
 
     case 'ADD_BLOCK': {
-      const entry = await StorageService.addBlockEntry(msg.entry)
-      return { success: true, data: entry }
+      const result = await StorageService.addBlockEntry(msg.entry)
+      return { success: true, data: result }
     }
 
     case 'REMOVE_BLOCK': {
@@ -145,7 +168,22 @@ async function handleMessage(
     }
 
     case 'SET_TIMER': {
-      await TimerService.start(msg.minutes)
+      await TimerService.start(clampInt(msg.minutes, TIMER_MIN, TIMER_MAX, 25))
+      return { success: true }
+    }
+
+    case 'PAUSE_TIMER': {
+      await TimerService.pause()
+      return { success: true }
+    }
+
+    case 'RESUME_TIMER': {
+      await TimerService.resume()
+      return { success: true }
+    }
+
+    case 'EXTEND_TIMER': {
+      await TimerService.extend(clampInt(msg.minutes, 1, 60, 5))
       return { success: true }
     }
 
@@ -160,27 +198,27 @@ async function handleMessage(
     }
 
     case 'SNOOZE': {
-      // 1. 寫入全域 snooze 狀態（讓所有 tab 的 checkBlockWithTimer 感知）
-      const snoozeUntil = Date.now() + msg.minutes * 60 * 1000
-      await StorageService.setSnoozeUntil(snoozeUntil)
-      // 2. 建立到期 alarm（精確觸發清除）
-      await chrome.alarms.create('nerd-snooze', { delayInMinutes: msg.minutes })
-      // 3. Badge 顯示剩餘 Snooze 時間（琥珀色，與計時器綠色區分）
-      chrome.action.setBadgeText({ text: `${msg.minutes}m` })
-      chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' })
-      // 4. Content script 會透過監聽 onChanged 自動移除覆蓋層，不須廣播
+      // 寫入全域 snooze 狀態（所有分頁的 checkBlockWithTimer 都會感知），並以 alarm 精確解除
+      const minutes = clampInt(msg.minutes, SNOOZE_MIN, SNOOZE_MAX, 5)
+      await StorageService.setSnoozeUntil(Date.now() + minutes * 60 * 1000)
+      await chrome.alarms.create(ALARM_SNOOZE, { delayInMinutes: minutes })
+      await updateBadge()
+      return { success: true }
+    }
+
+    case 'CLOSE_TAB': {
+      if (sender.tab?.id !== undefined) await chrome.tabs.remove(sender.tab.id)
       return { success: true }
     }
 
     case 'GET_TIME_STATS': {
-      // 確保取得統計資料前先 flush 目前的記憶體暫存
+      // 確保取得統計資料前先 flush 目前累積的時間
       await TimeTracker.flush()
       const timeRecords = await StorageService.getTimeRecords()
       return { success: true, data: timeRecords }
     }
 
     case 'EXPORT_DATA': {
-      // 確保匯出前先 flush
       await TimeTracker.flush()
       const data = await StorageService.exportAll()
       return { success: true, data }
@@ -193,11 +231,10 @@ async function handleMessage(
 
     case 'CLEAR_ALL_DATA': {
       await StorageService.clearAll()
-      return { success: true }
-    }
-
-    case 'STOP_FOR_THIS_TIME': {
-      // 由 Content Script 自行管理，Background 不處理
+      await chrome.alarms.clear('limina-done')
+      await chrome.alarms.clear(ALARM_SNOOZE)
+      await ensureAlarms()
+      await updateBadge()
       return { success: true }
     }
 
@@ -205,4 +242,3 @@ async function handleMessage(
       return { success: false, error: 'Unknown message type' }
   }
 }
-

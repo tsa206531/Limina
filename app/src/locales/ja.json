@@ -5,7 +5,8 @@
     "delete": "削除",
     "loading": "読み込み中...",
     "on": "オン",
-    "off": "オフ"
+    "off": "オフ",
+    "remove": "削除"
   },
   "nav": {
     "home": "ホーム",
@@ -19,6 +20,7 @@
     "current": "現在のサイト",
     "none": "なし",
     "focusing": "集中",
+    "paused": "一時停止中",
     "minutes": "分",
     "reset": "リセット",
     "addTime": "+5分",
@@ -27,7 +29,10 @@
     "allowSite": "許可する",
     "lockedMsg": "{domain} をブロックしました",
     "allowedMsg": "{domain} を許可しました",
-    "alreadyInList": "既にリストにあります"
+    "alreadyInList": "既にリストにあります",
+    "statusLocked": "ブロック中",
+    "statusWhite": "許可済み",
+    "statusNone": "リスト外"
   },
   "blocklist": {
     "title": "ブロックリスト",
@@ -35,7 +40,9 @@
     "blocked": "ブロック中",
     "whitelisted": "ホワイトリスト",
     "emptyBlocked": "ブロックされたサイトはありません。",
-    "emptyWhitelisted": "ホワイトリストはありません。"
+    "emptyWhitelisted": "ホワイトリストはありません。",
+    "added": "追加しました：{domain}",
+    "invalidDomain": "ドメインの形式が正しくありません"
   },
   "stats": {
     "title": "統計データ",
@@ -47,7 +54,15 @@
     "totalScreenTime": "合計集中時間",
     "dailyFocusTrends": "日別トレンド",
     "topSites": "トップサイト",
-    "emptyTopSites": "今日のデータはまだありません。",
+    "emptyTopSites": "この期間のデータはまだありません。",
+    "avg": "平均 {time}",
+    "today": "今日",
+    "category": {
+      "media": "メディア",
+      "social": "ソーシャル",
+      "developer": "開発",
+      "general": "一般"
+    },
     "timeFormat": {
       "h": "時間",
       "m": "分"
@@ -57,11 +72,14 @@
     "title": "設定",
     "blockBehavior": "ブロックの動作",
     "snoozeDuration": "スヌーズ時間",
-    "snoozeDesc": "一時的にブロックを無視する分数",
+    "snoozeDesc": "一時的にすべてのサイトを許可する分数（1–60）",
+    "hideSnooze": "スヌーズボタンを隠す",
+    "hideSnoozeDesc": "ブロック画面に解除手段を表示しない",
     "strictMode": "究極の集中モード",
     "strictDesc": "タイマー実行中、ホワイトリストのサイトのみ許可する",
     "timerPauses": "フリータイムモード",
     "timerPausesDesc": "タイマー実行中はすべてのブロックを解除する",
+    "exclusiveHint": "上のオプションと同時に有効にできません",
     "notifications": "通知",
     "timerAlerts": "タイマー通知",
     "timerAlertsDesc": "タイマー終了時にデスクトップ通知を受け取る",
@@ -75,13 +93,26 @@
     "clearDesc": "すべての統計データと設定を完全に削除します。",
     "clearWarningTitle": "すべてのデータを削除しますか？",
     "clearWarningBody": "この操作は元に戻せません。すべての統計とブロックリストが失われます。",
-    "confirmDelete": "はい、すべて削除します"
+    "confirmDelete": "はい、すべて削除します",
+    "saved": "設定を保存しました",
+    "saveFail": "設定の保存に失敗しました",
+    "exportOk": "エクスポートしました",
+    "exportFail": "エクスポートに失敗しました",
+    "importOk": "インポートしました",
+    "importFail": "インポートに失敗しました",
+    "invalidJson": "JSON ファイルの形式が正しくありません",
+    "cleared": "すべてのデータを削除しました",
+    "clearFail": "削除に失敗しました"
+  },
+  "notification": {
+    "timerDoneTitle": "Limina ⏰",
+    "timerDoneBody": "時間です！しっかり休みましょう。"
   },
   "overlay": {
     "title": "Limina がこのウェブサイトをブロックしました",
     "defaultMessage": "You shall not pass! 🧙‍♂️",
     "snooze": "⏱ {min} 分だけ休む",
-    "ignore": "わかった。閉じる",
+    "focus": "集中する — このタブを閉じる",
     "footer": "Limina 2.0 — プロダクティビティ・タイマー"
   }
 }

@@ -5,7 +5,8 @@
     "delete": "Delete",
     "loading": "Loading...",
     "on": "ON",
-    "off": "OFF"
+    "off": "OFF",
+    "remove": "Remove"
   },
   "nav": {
     "home": "Home",
@@ -19,6 +20,7 @@
     "current": "Current",
     "none": "none",
     "focusing": "Focusing",
+    "paused": "Paused",
     "minutes": "Minutes",
     "reset": "Reset",
     "addTime": "+5m",
@@ -27,7 +29,10 @@
     "allowSite": "Allow Site",
     "lockedMsg": "Locked {domain}",
     "allowedMsg": "Allowed {domain}",
-    "alreadyInList": "Already in list"
+    "alreadyInList": "Already in list",
+    "statusLocked": "Blocked",
+    "statusWhite": "Allowed",
+    "statusNone": "Not in list"
   },
   "blocklist": {
     "title": "Blocklist",
@@ -35,7 +40,9 @@
     "blocked": "Blocked",
     "whitelisted": "Whitelisted",
     "emptyBlocked": "No blocked sites yet.",
-    "emptyWhitelisted": "No whitelisted sites yet."
+    "emptyWhitelisted": "No whitelisted sites yet.",
+    "added": "Added: {domain}",
+    "invalidDomain": "Invalid domain"
   },
   "stats": {
     "title": "Statistics",
@@ -47,7 +54,15 @@
     "totalScreenTime": "Total Screen Time",
     "dailyFocusTrends": "Daily Focus Trends",
     "topSites": "Top Sites",
-    "emptyTopSites": "No data for today yet.",
+    "emptyTopSites": "No data for this period yet.",
+    "avg": "Avg {time}",
+    "today": "Today",
+    "category": {
+      "media": "Media",
+      "social": "Social",
+      "developer": "Developer",
+      "general": "General"
+    },
     "timeFormat": {
       "h": "h",
       "m": "m"
@@ -57,11 +72,14 @@
     "title": "Settings",
     "blockBehavior": "Block Behavior",
     "snoozeDuration": "Snooze Duration",
-    "snoozeDesc": "Minutes to temporarily ignore blocks",
+    "snoozeDesc": "Minutes to temporarily allow all sites (1–60)",
+    "hideSnooze": "Hide Snooze Button",
+    "hideSnoozeDesc": "No way out from the block page",
     "strictMode": "Ultimate Focus Mode",
     "strictDesc": "Only allow whitelisted sites during active timer",
     "timerPauses": "Free Time Mode",
     "timerPausesDesc": "Allow all sites while the timer is running",
+    "exclusiveHint": "Cannot be combined with the option above",
     "notifications": "Notifications",
     "timerAlerts": "Timer Alerts",
     "timerAlertsDesc": "Get notified when your focus timer finishes",
@@ -75,13 +93,26 @@
     "clearDesc": "This will delete all stats and settings permanently.",
     "clearWarningTitle": "Clear all data?",
     "clearWarningBody": "This action cannot be undone. All your statistics and blocked sites will be lost permanently.",
-    "confirmDelete": "Yes, delete everything"
+    "confirmDelete": "Yes, delete everything",
+    "saved": "Settings saved",
+    "saveFail": "Failed to save settings",
+    "exportOk": "Export successful",
+    "exportFail": "Export failed",
+    "importOk": "Import successful",
+    "importFail": "Import failed",
+    "invalidJson": "Invalid JSON file",
+    "cleared": "All data cleared",
+    "clearFail": "Clear failed"
+  },
+  "notification": {
+    "timerDoneTitle": "Limina ⏰",
+    "timerDoneBody": "Time's up! Take a good break."
   },
   "overlay": {
     "title": "Limina blocked this website",
     "defaultMessage": "You shall not pass! 🧙‍♂️",
     "snooze": "⏱ Let me rest for {min} minutes",
-    "ignore": "Got it, close reminder",
+    "focus": "Start focusing — close this tab",
     "footer": "Limina 2.0 — Productivity Timer"
   }
 }

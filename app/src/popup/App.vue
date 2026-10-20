@@ -1,91 +1,57 @@
 <template>
   <AppLayout>
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+      <Transition name="page" mode="out-in">
+        <component :is="Component" />
+      </Transition>
+    </RouterView>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import AppLayout from './components/AppLayout.vue'
 import { useSettingsStore } from './stores/useSettingsStore'
 import { useBlocklistStore } from './stores/useBlocklistStore'
 import { useTimerStore } from './stores/useTimerStore'
+import { useStatsStore } from './stores/useStatsStore'
 import { setLocale } from '@/composables/useI18n'
-
 
 const settingsStore = useSettingsStore()
 const blocklistStore = useBlocklistStore()
 const timerStore = useTimerStore()
+const statsStore = useStatsStore()
 
-const currentDomain = ref('')
-const blockStatus = ref<'locked' | 'white' | 'none'>('none')
+// 語言設定一改變就套用（含匯入、清除資料後）
+watch(() => settingsStore.settings.language, (lang) => setLocale(lang), { immediate: true })
 
-// ── A. storage 變更監聽：storage 被外部更新時，使 store 快取失效 ──
+// storage 被更新時（背景、其他視窗、匯入／清除），重新讀取對應的 store
 function onStorageChanged(
   changes: Record<string, chrome.storage.StorageChange>,
   area: string,
 ) {
   if (area !== 'local') return
-  if (changes.settings) {
-    settingsStore.invalidate()
-    settingsStore.load()
-  }
-  if (changes.blocklist) {
-    blocklistStore.invalidate()
-  }
-  if (changes.timerState) {
-    timerStore.invalidate()
-  }
-}
-
-// ── A. runtime 訊息監聽：Background 推送 BLOCK_STATUS 時即時更新狀態列 ──
-function onRuntimeMessage(message: { type: string; status?: 'locked' | 'white' | 'none' }) {
-  if (message.type === 'BLOCK_STATUS' && message.status) {
-    blockStatus.value = message.status
-  }
+  if (changes.settings) void settingsStore.load(true)
+  if (changes.blocklist) void blocklistStore.load(true)
+  if (changes.timerState) void timerStore.load(true)
+  if (changes.timeRecords) statsStore.invalidate()
 }
 
 onMounted(async () => {
-  await settingsStore.load()
-
-  // Apply language setting
-  let target = settingsStore.settings.language
-  if (target === 'auto') {
-    target = navigator.language.startsWith('zh') ? 'zh-TW' : navigator.language.startsWith('ja') ? 'ja' : 'en'
-  }
-  setLocale(target as any)
-
-  // 取得當前 tab URL 與封鎖狀態
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-  if (tab?.url) {
-    try {
-      currentDomain.value = new URL(tab.url).hostname
-    } catch {
-      currentDomain.value = ''
-    }
-    chrome.runtime.sendMessage({ type: 'GET_STATUS', url: tab.url }, (res) => {
-      if (res?.success) blockStatus.value = res.data.status
-    })
-  }
-
-  // 註冊監聽器
   chrome.storage.onChanged.addListener(onStorageChanged)
-  chrome.runtime.onMessage.addListener(onRuntimeMessage)
+  await settingsStore.load()
 })
 
 onUnmounted(() => {
-  // 清除監聽器防止記憶體洩漏
   chrome.storage.onChanged.removeListener(onStorageChanged)
-  chrome.runtime.onMessage.removeListener(onRuntimeMessage)
 })
-
 </script>
 
 <style>
 .page-enter-active,
 .page-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .page-enter-from {
   opacity: 0;

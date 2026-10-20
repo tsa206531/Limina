@@ -52,8 +52,9 @@ export default {
         },
       },
       fontFamily: {
-        display: ["Inter", "sans-serif"],
-        sans: ["Inter", "Noto Sans TC", "sans-serif"],
+        // Inter 由 @fontsource-variable/inter 本地打包；中日文退回系統字體
+        display: ["Inter Variable", "system-ui", "Noto Sans TC", "Microsoft JhengHei", "sans-serif"],
+        sans: ["Inter Variable", "system-ui", "Noto Sans TC", "Microsoft JhengHei", "sans-serif"],
       },
       borderRadius: {
         xl: "1.5rem",

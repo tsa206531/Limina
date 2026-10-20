@@ -2,6 +2,9 @@
 // Limina 2.0 — Content Script
 // 使用 Shadow DOM 隔離覆蓋層，避免與頁面樣式衝突
 
+import { resolveLang, translate } from '@/locales/translate'
+import type { AppSettings, BlockStatus } from '@/types'
+
 (function () {
   'use strict'
 
@@ -9,35 +12,20 @@
   if (document.getElementById('__limina-host__')) return
 
   let overlayVisible = false
-  let stopForThisTime = false // 本次忽略狀態
+  let savedOverflow: string | null = null // 顯示覆蓋層前頁面原本的 overflow
 
-  const i18nDict = {
-    en: {
-      blockedTitle: 'Limina blocked this site',
-      snoozeText: (m: number) => `⏱ Snooze for ${m} min`,
-      ignoreText: 'Start Focusing!!!!',
-      footer: 'Limina 2.0 — Nerd Timer',
-    },
-    'zh-TW': {
-      blockedTitle: 'Limina 阻擋了此網站',
-      snoozeText: (m: number) => `⏱ 讓我休息 ${m} 分鐘`,
-      ignoreText: '開始專注!!!!',
-      footer: 'Limina 2.0 — 廢宅計時器',
-    },
-    ja: {
-      blockedTitle: 'Limina がこのサイトをブロックしました',
-      snoozeText: (m: number) => `⏱ ${m} 分間スヌーズ`,
-      ignoreText: '集中しろ!!!!',
-      footer: 'Limina 2.0 — オタクタイマー',
+  /** 擴充被重新載入或移除後，舊頁面的 chrome.runtime 會失效 */
+  function contextAlive(): boolean {
+    try {
+      return Boolean(chrome.runtime?.id)
+    } catch {
+      return false
     }
   }
 
-  function getLang(settingsLang: string = 'auto') {
-    if (settingsLang === 'auto') {
-      const l = navigator.language
-      return l.startsWith('zh') ? 'zh-TW' : l.startsWith('ja') ? 'ja' : 'en'
-    }
-    return (settingsLang as keyof typeof i18nDict) || 'en'
+  function send<T = unknown>(message: object): Promise<{ success: boolean; data?: T } | undefined> {
+    if (!contextAlive()) return Promise.resolve(undefined)
+    return chrome.runtime.sendMessage(message).catch(() => undefined)
   }
 
   // ── Shadow DOM 容器 ─────────────────────────────────────
@@ -62,15 +50,13 @@
   overlay.id = 'nerd-overlay'
 
   const style = document.createElement('style')
+  // 只使用系統字體：不向第三方載入資源，也不受網站 CSP 影響
   style.textContent = `
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+      font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
     }
 
     #nerd-overlay {
@@ -78,7 +64,6 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      /* 與 App 一致的深色漸層背景，加上強烈毛玻璃 */
       background: linear-gradient(135deg,
         rgb(6 30 34 / 0%) 0%,
         rgb(8 60 72 / 0%) 50%,
@@ -177,7 +162,7 @@
       font-size: 12px;
       color: rgba(8, 131, 150, 0.8);
       margin-bottom: 28px;
-      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-family: ui-monospace, 'SF Mono', Consolas, monospace;
       background: rgba(8, 131, 150, 0.12);
       border: 1px solid rgba(8, 131, 150, 0.25);
       padding: 4px 14px;
@@ -208,6 +193,7 @@
 
     .nerd-btn:hover  { transform: translateY(-2px) scale(1.02); }
     .nerd-btn:active { transform: translateY(0) scale(0.98); }
+    .nerd-btn:disabled { opacity: 0.5; cursor: wait; }
 
     /* Snooze：ghost 透明 */
     .nerd-btn-snooze {
@@ -221,14 +207,14 @@
       border-color: rgba(255, 255, 255, 0.22);
     }
 
-    /* Ignore（開始專注）：主色 teal 漸層 */
-    .nerd-btn-ignore {
+    /* 開始專注（關閉分頁）：主色 teal 漸層 */
+    .nerd-btn-focus {
       background: linear-gradient(135deg, #088396, #066878);
       color: #ffffff;
       box-shadow: 0 4px 16px rgba(8, 131, 150, 0.45);
       border: none;
     }
-    .nerd-btn-ignore:hover {
+    .nerd-btn-focus:hover {
       box-shadow: 0 6px 24px rgba(8, 131, 150, 0.65);
     }
 
@@ -243,67 +229,52 @@
   overlay.innerHTML = `
     <div class="nerd-card">
       <span class="nerd-icon">🧙‍♂️</span>
-      <div class="nerd-title" id="nerd-title">Limina blocked this site</div>
-      <div class="nerd-message" id="nerd-msg">You shall not pass!</div>
+      <div class="nerd-title" id="nerd-title"></div>
+      <div class="nerd-message" id="nerd-msg"></div>
       <div class="nerd-domain" id="nerd-domain"></div>
-      <div class="nerd-btn-group" id="nerd-btn-group">
-        <button class="nerd-btn nerd-btn-snooze" id="nerd-btn-snooze">
-          ⏱ Snooze for 5 min
-        </button>
-        <button class="nerd-btn nerd-btn-ignore" id="nerd-btn-ignore">
-          I know, close this
-        </button>
+      <div class="nerd-btn-group">
+        <button class="nerd-btn nerd-btn-snooze" id="nerd-btn-snooze"></button>
+        <button class="nerd-btn nerd-btn-focus" id="nerd-btn-focus"></button>
       </div>
-      <div class="nerd-footer" id="nerd-footer">Limina 2.0</div>
+      <div class="nerd-footer" id="nerd-footer"></div>
     </div>
   `
 
   shadow.appendChild(style)
   shadow.appendChild(overlay)
 
-  // ── 初始化按鈕狀態 ─────────────────────────────────────
-  async function initOverlay(): Promise<void> {
-    // 取得設定
-    chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (res) => {
-      if (!res?.success) return
-      const settings = res.data
-      const langKey = getLang(settings.language)
-      const texts = i18nDict[langKey]
+  const $ = (id: string) => shadow.getElementById(id) as HTMLElement
+  const snoozeBtn = $('nerd-btn-snooze') as HTMLButtonElement
+  const focusBtn = $('nerd-btn-focus') as HTMLButtonElement
 
-      const titleEl = shadow.getElementById('nerd-title')
-      const msgEl = shadow.getElementById('nerd-msg')
-      const domainEl = shadow.getElementById('nerd-domain')
-      const snoozeBtn = shadow.getElementById('nerd-btn-snooze') as HTMLButtonElement
-      const ignoreBtn = shadow.getElementById('nerd-btn-ignore') as HTMLButtonElement
-      const footerEl = shadow.getElementById('nerd-footer')
+  let snoozeMinutes = 5
 
-      if (titleEl) titleEl.textContent = texts.blockedTitle
-      if (footerEl) footerEl.textContent = texts.footer
-      if (ignoreBtn) ignoreBtn.textContent = texts.ignoreText
-      if (msgEl) msgEl.textContent = settings.blockerMessage || 'You shall not pass! 🧙‍♂️'
-      if (domainEl) domainEl.textContent = location.hostname
+  // ── 依設定填入文字與按鈕狀態 ─────────────────────────────
+  function renderTexts(settings: AppSettings): void {
+    const lang = resolveLang(settings.language)
+    const t = (key: string, params?: Record<string, string | number>) => translate(lang, key, params)
+    snoozeMinutes = settings.snoozeDuration || 5
 
-      // 更新 snooze 按鈕文字
-      if (snoozeBtn) {
-        snoozeBtn.textContent = texts.snoozeText(settings.snoozeDuration || 5)
-      }
-
-      // 嚴格模式：隱藏按鈕
-      const btnGroup = shadow.getElementById('nerd-btn-group')
-      if (btnGroup) {
-        btnGroup.style.display = settings.isSnoozeHidden ? 'none' : 'flex'
-      }
-    })
+    $('nerd-title').textContent = t('overlay.title')
+    $('nerd-msg').textContent = settings.blockerMessage || t('overlay.defaultMessage')
+    $('nerd-domain').textContent = location.hostname
+    $('nerd-footer').textContent = t('overlay.footer')
+    snoozeBtn.textContent = t('overlay.snooze', { min: snoozeMinutes })
+    focusBtn.textContent = t('overlay.focus')
+    // 隱藏 snooze：封鎖頁不提供放行選項
+    snoozeBtn.style.display = settings.isSnoozeHidden ? 'none' : ''
+    snoozeBtn.disabled = false
   }
 
-  function showOverlay(): void {
+  function showOverlay(settings: AppSettings): void {
+    renderTexts(settings)
     if (overlayVisible) return
     overlayVisible = true
     host.style.pointerEvents = 'all'
     overlay.classList.add('visible')
-    // 防止頁面捲動
-    document.body.style.overflow = 'hidden'
-    void initOverlay()
+    // 防止頁面捲動，並記住原值以便還原
+    savedOverflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
   }
 
   function hideOverlay(): void {
@@ -311,57 +282,46 @@
     overlayVisible = false
     host.style.pointerEvents = 'none'
     overlay.classList.remove('visible')
-    document.body.style.overflow = ''
+    document.documentElement.style.overflow = savedOverflow ?? ''
+    savedOverflow = null
   }
 
   // ── 按鈕事件 ───────────────────────────────────────────
-  const snoozeBtn = shadow.getElementById('nerd-btn-snooze')
-
-  // 「開始專注!!!!」→ 什麼都不做，繼續封鎖（鼓勵按鈕，覆蓋層保持顯示）
-  shadow.getElementById('nerd-btn-ignore')?.addEventListener('click', () => {
-    // intentionally no-op: keep blocking overlay visible
+  // 「讓我休息 N 分鐘」→ 全域 snooze，所有分頁放行 N 分鐘後自動恢復封鎖
+  snoozeBtn.addEventListener('click', () => {
+    snoozeBtn.disabled = true
+    void send({ type: 'SNOOZE', minutes: snoozeMinutes })
+    // 覆蓋層由 storage.onChanged（snoozeUntil）觸發重新判斷後隱藏
   })
 
-  // 「⏱ 讓我休息 N 分鐘」→ 關閉覆蓋層並啟動倒計時
-  snoozeBtn?.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (res) => {
-      const minutes = res?.data?.snoozeDuration ?? 5
-      chrome.runtime.sendMessage({ type: 'SET_TIMER', minutes }, () => {
-        stopForThisTime = true
-        hideOverlay()
-      })
+  // 「開始專注」→ 關閉這個分頁
+  focusBtn.addEventListener('click', () => {
+    void send({ type: 'CLOSE_TAB' })
+  })
+
+  // ── 封鎖判斷 ──────────────────────────────────────────
+  async function checkAndShow(): Promise<void> {
+    const res = await send<{ status: BlockStatus; settings: AppSettings }>({
+      type: 'GET_STATUS',
+      url: location.href,
     })
-  })
+    if (!res?.success || !res.data) return
+    if (res.data.status === 'locked') showOverlay(res.data.settings)
+    else hideOverlay()
+  }
 
-  // ── 監聽 Storage 變化 (Pull 模式) ────────────────────────
-  chrome.storage.onChanged.addListener((changes) => {
-    // 當相關設定或狀態改變時，主動重新檢查當前網址是否該被封鎖
+  // 相關狀態改變時重新判斷（snooze 到期、計時器開始／結束、名單或設定變更）
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !contextAlive()) return
     if (changes.timerState || changes.settings || changes.snoozeUntil || changes.blocklist) {
-      if (!stopForThisTime) {
-        checkAndShow()
-      }
+      void checkAndShow()
     }
   })
 
-  // ── 初始化：頁面載入時立即查詢封鎖狀態 ─────────────────
-  function checkAndShow(): void {
-    if (stopForThisTime) return
-    chrome.runtime.sendMessage(
-      { type: 'GET_STATUS', url: location.href },
-      (res) => {
-        if (res?.data?.status === 'locked') {
-          showOverlay()
-        } else {
-          hideOverlay()
-        }
-      },
-    )
-  }
+  // SPA 換頁：background 偵測到 URL 變更時通知
+  chrome.runtime.onMessage.addListener((message: { type?: string }) => {
+    if (message?.type === 'BLOCK_STATUS') void checkAndShow()
+  })
 
-  // 延遲確保 DOM 就緒
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkAndShow)
-  } else {
-    checkAndShow()
-  }
+  void checkAndShow()
 })()

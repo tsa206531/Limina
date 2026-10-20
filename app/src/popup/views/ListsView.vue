@@ -69,7 +69,7 @@
         >
           <div class="flex items-center gap-3 overflow-hidden">
             <div class="bg-white/80 dark:bg-slate-800 p-2 rounded-xl shadow-sm shrink-0 flex items-center justify-center w-10 h-10">
-              <span class="material-symbols-outlined text-slate-400">{{ getIconForDomain(entry.domain) }}</span>
+              <span class="material-symbols-outlined text-slate-400">{{ iconForDomain(entry.domain) }}</span>
             </div>
             <div class="flex flex-col min-w-0">
               <p class="text-text-main dark:text-slate-100 text-sm font-semibold truncate leading-tight tracking-wide">
@@ -82,8 +82,8 @@
           </div>
           <button
             class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/40 text-text-secondary dark:text-gray-500 hover:text-red-500 transition-colors"
-            @click="removeEntry(entry.id)"
-            title="Remove"
+            @click="blocklistStore.removeEntry(entry.id)"
+            :title="$t('common.remove')"
           >
             <span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
           </button>
@@ -96,6 +96,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { iconForDomain, normalizeDomain } from '@/utils/domain'
 import { useBlocklistStore } from '../stores/useBlocklistStore'
 
 const { t } = useI18n()
@@ -120,30 +121,24 @@ onMounted(async () => {
   loading.value = false
 })
 
+let msgTimer: ReturnType<typeof setTimeout> | undefined
+function showAddMsg(text: string, type: 'ok' | 'warn') {
+  addMsg.value = { text, type }
+  clearTimeout(msgTimer)
+  msgTimer = setTimeout(() => { addMsg.value = null }, 2500)
+}
+
 async function addManual() {
-  const domain = inputDomain.value.trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0]
-  if (!domain) return
+  if (!inputDomain.value.trim()) return
+  const domain = normalizeDomain(inputDomain.value)
+  if (!domain) return showAddMsg(t('blocklist.invalidDomain'), 'warn')
   const res = await blocklistStore.addEntry({ domain, type: activeTab.value })
-  if (res) {
-    addMsg.value = { text: `✅ Added: ${domain}`, type: 'ok' }
+  if (res?.created) {
+    showAddMsg(t('blocklist.added', { domain }), 'ok')
     inputDomain.value = ''
   } else {
-    addMsg.value = { text: '⚠️ Already in list', type: 'warn' }
+    showAddMsg(t('home.alreadyInList'), 'warn')
   }
-  setTimeout(() => { addMsg.value = null }, 2500)
-}
-
-async function removeEntry(id: string) {
-  await blocklistStore.removeEntry(id)
-}
-
-function getIconForDomain(domain: string): string {
-  // Simple heuristic for generic icons based on domain
-  if (domain.includes('youtube') || domain.includes('netflix') || domain.includes('twitch')) return 'play_circle'
-  if (domain.includes('facebook') || domain.includes('twitter') || domain.includes('instagram') || domain.includes('reddit')) return 'forum'
-  if (domain.includes('github') || domain.includes('stackoverflow')) return 'code'
-  if (domain.includes('mail') || domain.includes('gmail')) return 'mail'
-  return 'public'
 }
 </script>
 

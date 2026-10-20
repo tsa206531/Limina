@@ -8,7 +8,7 @@
     "tabs",
     "alarms",
     "notifications",
-    "activeTab"
+    "idle"
   ],
   "host_permissions": [
     "<all_urls>"

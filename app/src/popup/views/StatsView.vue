@@ -57,24 +57,24 @@
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-base font-bold text-text-main dark:text-slate-100">{{ $t('stats.dailyFocusTrends') }}</h2>
             <span class="text-[10px] font-medium text-text-secondary dark:text-slate-500 bg-white/50 dark:bg-slate-800/50 px-2 py-1 rounded-lg">
-              Avg {{ avgTime }}
+              {{ $t('stats.avg', { time: avgTime }) }}
             </span>
           </div>
-          
-          <div class="h-40 flex items-end justify-between gap-1.5 px-1 relative">
+
+          <div class="h-40 flex items-end justify-between px-1 relative" :class="selectedDays === 30 ? 'gap-0.5' : 'gap-1.5'">
             <div v-for="(day, index) in chartBars" :key="index" class="flex flex-col items-center gap-2 flex-1 group cursor-pointer h-full justify-end">
               <div class="relative w-full bg-slate-200/50 dark:bg-slate-700/30 rounded-t-lg h-[110px] overflow-hidden">
                 <!-- Tooltip directly on hover -->
                 <div class="absolute -top-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] bg-slate-800 dark:bg-white text-white dark:text-black px-1 rounded mb-1 z-20 whitespace-nowrap">
-                  {{ day.value }}m
+                  {{ day.tooltip }}
                 </div>
                 <div 
                   class="absolute bottom-0 w-full rounded-t-lg transition-all duration-1000 ease-out bg-gradient-to-t from-primary to-primary-dark group-hover:to-cyan-400 delay-[200ms]" 
                   :style="{ height: animateData ? `${day.percentage}%` : '0%' }"
                 ></div>
               </div>
-              <span class="text-[10px] font-medium transition-colors" :class="index === chartBars.length - 1 ? 'font-bold text-primary' : 'text-text-secondary dark:text-slate-500 group-hover:text-primary'">
-                {{ day.label }}
+              <span class="text-[10px] font-medium transition-colors whitespace-nowrap" :class="index === chartBars.length - 1 ? 'font-bold text-primary' : 'text-text-secondary dark:text-slate-500 group-hover:text-primary'">
+                {{ day.label || ' ' }}
               </span>
             </div>
           </div>
@@ -85,7 +85,7 @@
           <h2 class="text-base font-bold text-text-main dark:text-slate-100 mb-4">{{ $t('stats.topSites') }}</h2>
           
           <div class="flex flex-col gap-4">
-            <template v-if="statsStore.todayStats.length > 0">
+            <template v-if="rangeStats.length > 0">
               <div 
                 v-for="(item, i) in topSites" 
                 :key="item.domain"
@@ -93,12 +93,12 @@
               >
                 <!-- Dynamic Icons & Colors -->
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" :class="getSiteColorClass(i)">
-                  <span class="material-symbols-outlined text-xl">{{ getIconForDomain(item.domain) }}</span>
+                  <span class="material-symbols-outlined text-xl">{{ iconForDomain(item.domain) }}</span>
                 </div>
                 
                 <div class="flex-1 min-w-0">
                   <h3 class="text-sm font-semibold text-text-main dark:text-slate-200 truncate">{{ item.domain }}</h3>
-                  <p class="text-[10px] text-text-secondary dark:text-slate-500 uppercase tracking-widest mt-0.5">{{ getSiteCategory(item.domain) }}</p>
+                  <p class="text-[10px] text-text-secondary dark:text-slate-500 uppercase tracking-widest mt-0.5">{{ siteCategory(item.domain) }}</p>
                 </div>
                 
                 <div class="text-right shrink-0">
@@ -130,11 +130,13 @@ import {
   Tooltip as ChartTooltip,
 } from 'chart.js'
 import { useI18n } from '@/composables/useI18n'
+import { domainCategory, iconForDomain } from '@/utils/domain'
+import { parseDateKey } from '@/utils/date'
 import { useStatsStore } from '../stores/useStatsStore'
 
 ChartJS.register(ArcElement, ChartTooltip)
 
-const { t } = useI18n()
+const { t, lang } = useI18n()
 
 const statsStore = useStatsStore()
 const loading = ref(false)
@@ -154,26 +156,14 @@ onMounted(async () => {
   setTimeout(() => { animateData.value = true }, 50)
 })
 
-const currentRangeStats = computed(() => {
-  if (selectedDays.value === 1) return statsStore.todayStats
-  // Basic aggregation logic for multiple days if we had raw logs, but since statsStore only stores daily aggregates natively, 
-  // we would need more complex logic. Assuming getDateRangeStats gets an aggregated array of daily totals.
-  // We'll aggregate domains up to X days. For simplicity we will just show today's top sites regardless of range selection, 
-  // or you could aggregate them properly if statsStore supports it. Let's use todayStats for pie chart for now.
-  return statsStore.todayStats
-})
+// 區間內各網域總時長（甜甜圈圖與 Top Sites 共用）
+const rangeStats = computed(() => statsStore.getDomainStats(selectedDays.value))
+// 區間內每日總時長（長條圖、總計、平均共用）
+const dailyStats = computed(() => statsStore.getDateRangeStats(selectedDays.value))
+const rangeTotalMs = computed(() => dailyStats.value.reduce((s, r) => s + r.ms, 0))
 
-const todayTotal = computed(() => {
-  const range = statsStore.getDateRangeStats(selectedDays.value)
-  const total = range.reduce((s, r) => s + r.ms, 0)
-  return msToTime(total)
-})
-
-const avgTime = computed(() => {
-  const range = statsStore.getDateRangeStats(selectedDays.value)
-  const total = range.reduce((s, r) => s + r.ms, 0)
-  return msToTime(Math.max(0, Math.floor(total / selectedDays.value)))
-})
+const todayTotal = computed(() => msToTime(rangeTotalMs.value))
+const avgTime = computed(() => msToTime(Math.floor(rangeTotalMs.value / selectedDays.value)))
 
 // === Doughnut Chart Setup ===
 const CHART_COLORS = [
@@ -181,7 +171,7 @@ const CHART_COLORS = [
 ]
 
 const doughnutData = computed(() => {
-  const top = currentRangeStats.value.slice(0, 5)
+  const top = rangeStats.value.slice(0, 5)
   return {
     labels: top.map((r) => r.domain),
     datasets: [{
@@ -212,21 +202,22 @@ const doughnutOptions = {
 
 // === HTML Bar Chart Setup ===
 const chartBars = computed(() => {
-  const range = statsStore.getDateRangeStats(selectedDays.value)
-  // Ensure we have exactly `selectedDays` bars, or at most 7 for UI clarity if selected is 30.
-  const displayRange = selectedDays.value === 30 ? range.slice(-7) : range
-  
-  const maxMs = Math.max(...displayRange.map(r => r.ms), 60000) // minimum 1 min height
-  
-  return displayRange.map(r => {
-    // try to get a short day name (e.g. "Mon" instead of date)
-    const dateObj = new Date(r.date)
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    const label = selectedDays.value === 1 ? 'Today' : days[dateObj.getDay()] || r.date.slice(5) // MM-DD fallback
-    
+  const range = dailyStats.value
+  const maxMs = Math.max(...range.map(r => r.ms), 60000) // minimum 1 min height
+  const weekday = new Intl.DateTimeFormat(lang.value, { weekday: 'short' })
+  const monthDay = new Intl.DateTimeFormat(lang.value, { month: 'numeric', day: 'numeric' })
+
+  return range.map((r, i) => {
+    const date = parseDateKey(r.date)
+    let label = ''
+    if (selectedDays.value === 1) label = t('stats.today')
+    else if (selectedDays.value === 7) label = weekday.format(date)
+    // 30 天：每 5 天標一次日期，最後一天必標
+    else if ((range.length - 1 - i) % 5 === 0) label = monthDay.format(date)
+
     return {
       label,
-      value: Math.round(r.ms / 60000), // in minutes
+      tooltip: `${monthDay.format(date)} · ${msToTime(r.ms)}`,
       percentage: Math.min(100, Math.max(5, (r.ms / maxMs) * 100)) // 5% min height
     }
   })
@@ -234,8 +225,8 @@ const chartBars = computed(() => {
 
 // === Top Sites Setup ===
 const topSites = computed(() => {
-  const maxMs = currentRangeStats.value[0]?.ms || 1
-  return currentRangeStats.value.slice(0, 5).map(item => ({
+  const maxMs = rangeStats.value[0]?.ms || 1
+  return rangeStats.value.slice(0, 5).map(item => ({
     ...item,
     formattedTime: msToTime(item.ms),
     percentage: Math.min(100, (item.ms / maxMs) * 100)
@@ -254,18 +245,9 @@ function msToTime(ms: number): string {
   return `${h}h ${rm}m`
 }
 
-function getIconForDomain(domain: string): string {
-  if (domain.includes('youtube') || domain.includes('netflix') || domain.includes('twitch')) return 'play_circle'
-  if (domain.includes('github') || domain.includes('stackoverflow')) return 'code'
-  if (domain.includes('facebook') || domain.includes('twitter') || domain.includes('instagram')) return 'forum'
-  return 'public'
-}
-
-function getSiteCategory(domain: string): string {
-  if (domain.includes('youtube') || domain.includes('netflix') || domain.includes('twitch')) return 'Media'
-  if (domain.includes('github') || domain.includes('stackoverflow')) return 'Developer'
-  if (domain.includes('facebook') || domain.includes('twitter') || domain.includes('instagram')) return 'Social'
-  return 'General'
+function siteCategory(domain: string): string {
+  const cat = domainCategory(domain)
+  return t(`stats.category.${cat === 'mail' ? 'general' : cat}`)
 }
 
 function getSiteColorClass(index: number): string {
