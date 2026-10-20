@@ -16,12 +16,11 @@ export const useBlocklistStore = defineStore('blocklist', () => {
   async function load(force = false) {
     if (!force && lastFetchedAt.value && Date.now() - lastFetchedAt.value < CACHE_TTL) return
 
+    // 讀取直接走 storage，不經過 Service Worker；寫入仍交給背景統一序列化
     loading.value = true
-    const res = await chrome.runtime.sendMessage({ type: 'GET_BLOCKLIST' }).catch(() => undefined)
-    if (res?.success) {
-      entries.value = res.data ?? []
-      lastFetchedAt.value = Date.now()
-    }
+    const { blocklist } = await chrome.storage.local.get('blocklist')
+    entries.value = (blocklist as BlockListEntry[] | undefined) ?? []
+    lastFetchedAt.value = Date.now()
     loading.value = false
   }
 

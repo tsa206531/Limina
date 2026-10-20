@@ -134,6 +134,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { domainOptions } from '@/utils/domain'
+import { evaluateBlock, readBlockState } from '@/utils/block'
 import { TIMER_MAX, TIMER_MIN, clampInt } from '@/types'
 import type { BlockStatus } from '@/types'
 import { useSettingsStore } from '../stores/useSettingsStore'
@@ -177,10 +178,8 @@ const dashOffset = computed(() => {
 
 async function refreshStatus() {
   if (!currentUrl.value) return
-  const res = await chrome.runtime
-    .sendMessage({ type: 'GET_STATUS', url: currentUrl.value })
-    .catch(() => undefined)
-  if (res?.success) blockStatus.value = res.data.status
+  // 與 content script 同一套規則，直接在 popup 計算
+  blockStatus.value = evaluateBlock(await readBlockState(), currentUrl.value)
 }
 
 onMounted(async () => {

@@ -4,8 +4,9 @@
 import type {
   AddBlockResult,
   BlockListEntry,
-  TimeRecord,
   AppSettings,
+  DailyTime,
+  TimeByDay,
   TimerState,
 } from '@/types'
 import {
@@ -15,15 +16,25 @@ import {
   SNOOZE_MIN,
   clampInt,
 } from '@/types'
-import { localDateKey } from '@/utils/date'
+import { localDateKey, recentDateKeys } from '@/utils/date'
 
-const KEYS = {
+export const KEYS = {
   BLOCKLIST: 'blocklist',
   SETTINGS: 'settings',
   TIMER: 'timerState',
-  TIME_RECORDS: 'timeRecords',
   SNOOZE_UNTIL: 'snoozeUntil', // Unix timestamp，0 = 無 snooze
+  LEGACY_TIME_RECORDS: 'timeRecords', // v2.0 舊格式：所有網域 × 所有日期放在同一個 key
 } as const
+
+/**
+ * 停留時間依「日」分 key 儲存：time:YYYY-MM-DD -> { domain: ms }
+ * 每次寫入只動當天那一小筆，storage.onChanged 廣播的資料量也只有一天
+ */
+export const TIME_KEY_PREFIX = 'time:'
+export const TIME_RETENTION_DAYS = 90
+
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
+const timeKey = (day: string) => `${TIME_KEY_PREFIX}${day}`
 
 // 所有「讀出 → 修改 → 寫回」的操作排進同一條佇列，避免並發寫入互相覆蓋
 let writeQueue: Promise<unknown> = Promise.resolve()
@@ -72,18 +83,52 @@ function sanitizeBlocklist(raw: unknown): BlockListEntry[] {
   )
 }
 
-function sanitizeTimeRecords(raw: unknown): Record<string, TimeRecord> {
-  if (!isPlainObject(raw)) return {}
-  const out: Record<string, TimeRecord> = {}
-  for (const [domain, rec] of Object.entries(raw)) {
-    if (!isPlainObject(rec) || typeof rec.total !== 'number' || !isPlainObject(rec.daily)) continue
-    const daily: Record<string, number> = {}
-    for (const [day, ms] of Object.entries(rec.daily)) {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(day) && typeof ms === 'number' && ms >= 0) daily[day] = ms
-    }
-    out[domain] = { domain, total: rec.total, daily }
+function sanitizeDaily(raw: unknown): DailyTime {
+  const out: DailyTime = {}
+  if (!isPlainObject(raw)) return out
+  for (const [domain, ms] of Object.entries(raw)) {
+    if (typeof ms === 'number' && ms > 0) out[domain] = ms
   }
   return out
+}
+
+/** 新格式：{ "YYYY-MM-DD": { domain: ms } } */
+function sanitizeTimeByDay(raw: unknown): TimeByDay {
+  const out: TimeByDay = {}
+  if (!isPlainObject(raw)) return out
+  for (const [day, daily] of Object.entries(raw)) {
+    if (!DATE_KEY.test(day)) continue
+    const clean = sanitizeDaily(daily)
+    if (Object.keys(clean).length > 0) out[day] = clean
+  }
+  return out
+}
+
+/** 舊格式：{ domain: { total, daily: { "YYYY-MM-DD": ms } } } → 新格式 */
+function legacyToTimeByDay(raw: unknown): TimeByDay {
+  const out: TimeByDay = {}
+  if (!isPlainObject(raw)) return out
+  for (const [domain, rec] of Object.entries(raw)) {
+    if (!isPlainObject(rec) || !isPlainObject(rec.daily)) continue
+    for (const [day, ms] of Object.entries(rec.daily)) {
+      if (!DATE_KEY.test(day) || typeof ms !== 'number' || ms <= 0) continue
+      ;(out[day] ??= {})[domain] = ms
+    }
+  }
+  return out
+}
+
+function oldestKeptDay(): string {
+  return recentDateKeys(TIME_RETENTION_DAYS)[0]
+}
+
+async function listTimeKeys(): Promise<string[]> {
+  const local = chrome.storage.local as chrome.storage.LocalStorageArea & {
+    getKeys?: () => Promise<string[]>
+  }
+  // getKeys（Chrome 130+）只取 key，不必把所有資料讀進記憶體
+  const keys = local.getKeys ? await local.getKeys() : Object.keys(await local.get(null))
+  return keys.filter((k) => k.startsWith(TIME_KEY_PREFIX))
 }
 
 export const StorageService = {
@@ -157,25 +202,59 @@ export const StorageService = {
     })
   },
 
-  // ─── TimeRecords ─────────────────────────────────────────
-  async getTimeRecords(): Promise<Record<string, TimeRecord>> {
-    const result = await chrome.storage.local.get(KEYS.TIME_RECORDS)
-    return (result[KEYS.TIME_RECORDS] as Record<string, TimeRecord>) ?? {}
-  },
-
-  async setTimeRecords(records: Record<string, TimeRecord>): Promise<void> {
-    await chrome.storage.local.set({ [KEYS.TIME_RECORDS]: records })
+  // ─── 停留時間（每日一筆）─────────────────────────────────
+  /** 讀取指定日期的資料；沒有資料的日期不會出現在結果中 */
+  async getTimeByDay(days: string[]): Promise<TimeByDay> {
+    const result = await chrome.storage.local.get(days.map(timeKey))
+    const out: TimeByDay = {}
+    for (const day of days) {
+      const daily = result[timeKey(day)] as DailyTime | undefined
+      if (daily) out[day] = daily
+    }
+    return out
   },
 
   /** @param day 記錄歸屬的本地日期 key，預設為今天 */
   recordTime(domain: string, ms: number, day: string = localDateKey()): Promise<void> {
     return serialize(async () => {
-      const records = await this.getTimeRecords()
-      const rec: TimeRecord = records[domain] ?? { domain, total: 0, daily: {} }
-      rec.total += ms
-      rec.daily[day] = (rec.daily[day] ?? 0) + ms
-      records[domain] = rec
-      await this.setTimeRecords(records)
+      const key = timeKey(day)
+      const result = await chrome.storage.local.get(key)
+      const daily = (result[key] as DailyTime | undefined) ?? {}
+      daily[domain] = (daily[domain] ?? 0) + ms
+      await chrome.storage.local.set({ [key]: daily })
+    })
+  },
+
+  /** 刪除超過保留天數的每日資料 */
+  pruneTimeRecords(): Promise<void> {
+    return serialize(async () => {
+      const oldest = oldestKeptDay()
+      const stale = (await listTimeKeys()).filter((k) => k.slice(TIME_KEY_PREFIX.length) < oldest)
+      if (stale.length > 0) await chrome.storage.local.remove(stale)
+    })
+  },
+
+  /** v2.0 舊格式（單一 timeRecords key）轉為每日一筆，並與已存在的新資料合併 */
+  migrateLegacyTimeRecords(): Promise<void> {
+    return serialize(async () => {
+      const result = await chrome.storage.local.get(KEYS.LEGACY_TIME_RECORDS)
+      if (!(KEYS.LEGACY_TIME_RECORDS in result)) return
+
+      const legacy = legacyToTimeByDay(result[KEYS.LEGACY_TIME_RECORDS])
+      const oldest = oldestKeptDay()
+      const days = Object.keys(legacy).filter((d) => d >= oldest)
+      const existing = await this.getTimeByDay(days)
+
+      const patch: Record<string, DailyTime> = {}
+      for (const day of days) {
+        const merged = { ...existing[day] }
+        for (const [domain, ms] of Object.entries(legacy[day])) {
+          merged[domain] = (merged[domain] ?? 0) + ms
+        }
+        patch[timeKey(day)] = merged
+      }
+      if (days.length > 0) await chrome.storage.local.set(patch)
+      await chrome.storage.local.remove(KEYS.LEGACY_TIME_RECORDS)
     })
   },
 
@@ -195,27 +274,42 @@ export const StorageService = {
 
   // ─── Export / Import / Clear ─────────────────────────────
   async exportAll(): Promise<object> {
-    const [blocklist, settings, timeRecords] = await Promise.all([
+    const [blocklist, settings, timeByDay] = await Promise.all([
       this.getBlocklist(),
       this.getSettings(),
-      this.getTimeRecords(),
+      this.getTimeByDay(recentDateKeys(TIME_RETENTION_DAYS)),
     ])
-    return { blocklist, settings, timeRecords, exportedAt: new Date().toISOString() }
+    return { version: 2, blocklist, settings, timeByDay, exportedAt: new Date().toISOString() }
   },
 
-  /** 驗證後覆蓋匯入；格式錯誤時拋出例外，不寫入任何資料 */
+  /**
+   * 驗證後覆蓋匯入；格式錯誤時拋出例外，不寫入任何資料
+   * 接受新格式 timeByDay 與 v2.0 舊格式 timeRecords
+   */
   importAll(data: unknown): Promise<void> {
     return serialize(async () => {
       if (!isPlainObject(data)) throw new Error('Invalid backup format')
-      const hasAny = 'blocklist' in data || 'settings' in data || 'timeRecords' in data
-      if (!hasAny) throw new Error('Backup contains no Limina data')
+      const hasTime = 'timeByDay' in data || 'timeRecords' in data
+      if (!('blocklist' in data) && !('settings' in data) && !hasTime) {
+        throw new Error('Backup contains no Limina data')
+      }
 
       const patch: Record<string, unknown> = {}
       if ('blocklist' in data) patch[KEYS.BLOCKLIST] = sanitizeBlocklist(data.blocklist)
-      if ('timeRecords' in data) patch[KEYS.TIME_RECORDS] = sanitizeTimeRecords(data.timeRecords)
       if ('settings' in data) {
         const current = await this.getSettings()
         patch[KEYS.SETTINGS] = { ...current, ...sanitizeSettings(data.settings) }
+      }
+      if (hasTime) {
+        const byDay = 'timeByDay' in data
+          ? sanitizeTimeByDay(data.timeByDay)
+          : legacyToTimeByDay(data.timeRecords)
+        const oldest = oldestKeptDay()
+        for (const [day, daily] of Object.entries(byDay)) {
+          if (day >= oldest) patch[timeKey(day)] = daily
+        }
+        // 匯入的時間資料取代現有資料
+        await chrome.storage.local.remove([...(await listTimeKeys()), KEYS.LEGACY_TIME_RECORDS])
       }
       await chrome.storage.local.set(patch)
     })

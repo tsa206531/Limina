@@ -25,12 +25,11 @@ export const useTimerStore = defineStore('timer', () => {
 
   async function load(force = false) {
     if (!force && lastFetchedAt.value && Date.now() - lastFetchedAt.value < CACHE_TTL) return
-    const res = await send({ type: 'GET_TIMER_STATE' })
-    if (res?.success) {
-      state.value = res.data as TimerState
-      lastFetchedAt.value = Date.now()
-      syncTick()
-    }
+    // 讀取直接走 storage，不經過 Service Worker；指令仍交給背景處理
+    const { timerState } = await chrome.storage.local.get('timerState')
+    state.value = { ...DEFAULT_TIMER_STATE, ...(timerState as Partial<TimerState> | undefined) }
+    lastFetchedAt.value = Date.now()
+    syncTick()
   }
 
   /** 送出指令後以背景的實際狀態為準 */

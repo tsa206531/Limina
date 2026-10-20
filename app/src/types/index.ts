@@ -8,11 +8,11 @@ export interface BlockListEntry {
   createdAt: number // Unix timestamp
 }
 
-export interface TimeRecord {
-  domain: string
-  total: number // ms
-  daily: Record<string, number> // 本地日期 "YYYY-MM-DD" -> ms
-}
+/** 單日各網域停留時間：domain -> ms */
+export type DailyTime = Record<string, number>
+
+/** 本地日期 "YYYY-MM-DD" -> 當日各網域停留時間 */
+export type TimeByDay = Record<string, DailyTime>
 
 export interface AppSettings {
   isEnabled: boolean
@@ -37,7 +37,6 @@ export interface TimerState {
 export type BlockStatus = 'white' | 'locked' | 'none'
 
 export type MessageType =
-  | { type: 'GET_STATUS'; url: string }
   | { type: 'SET_TIMER'; minutes: number }
   | { type: 'CANCEL_TIMER' }
   | { type: 'PAUSE_TIMER' }
@@ -46,15 +45,12 @@ export type MessageType =
   | { type: 'ADD_BLOCK'; entry: Omit<BlockListEntry, 'id' | 'createdAt'> }
   | { type: 'REMOVE_BLOCK'; id: string }
   | { type: 'UPDATE_SETTINGS'; settings: Partial<AppSettings> }
-  | { type: 'GET_TIME_STATS' }
+  | { type: 'GET_TIME_STATS'; days: number }
   | { type: 'EXPORT_DATA' }
   | { type: 'IMPORT_DATA'; data: unknown }
   | { type: 'CLEAR_ALL_DATA' }
   | { type: 'SNOOZE'; minutes: number }
   | { type: 'CLOSE_TAB' }
-  | { type: 'GET_SETTINGS' }
-  | { type: 'GET_BLOCKLIST' }
-  | { type: 'GET_TIMER_STATE' }
 
 export interface AddBlockResult {
   entry: BlockListEntry

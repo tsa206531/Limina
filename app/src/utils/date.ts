@@ -9,6 +9,17 @@ export function localDateKey(d: Date = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
+/** 最近 days 天（含今天）的本地日期 key，由舊到新 */
+export function recentDateKeys(days: number, now: Date = new Date()): string[] {
+  const keys: string[] = []
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - i)
+    keys.push(localDateKey(d))
+  }
+  return keys
+}
+
 /** 將 "YYYY-MM-DD" 解析為本地時區的 Date（new Date('YYYY-MM-DD') 會被當成 UTC） */
 export function parseDateKey(key: string): Date {
   const [y, m, d] = key.split('-').map(Number)

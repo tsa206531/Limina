@@ -1,12 +1,11 @@
 // src/background/index.ts
 // Limina 2.0 — Background Service Worker 主入口（MV3）
 
-import { checkBlockWithTimer } from './services/BlockEngine'
 import { TimerService } from './services/TimerService'
 import { TimeTracker } from './services/TimeTracker'
-import { StorageService } from './services/StorageService'
+import { StorageService, TIME_RETENTION_DAYS } from './services/StorageService'
 import { updateBadge } from './services/BadgeService'
-import { localDateKey } from '@/utils/date'
+import { localDateKey, recentDateKeys } from '@/utils/date'
 import { SNOOZE_MAX, SNOOZE_MIN, TIMER_MAX, TIMER_MIN, clampInt } from '@/types'
 import type { AppSettings, MessageType, MessageResponse } from '@/types'
 
@@ -47,12 +46,15 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   }
 
   if (Object.keys(patch).length > 0) await StorageService.updateSettings(patch)
+  await StorageService.migrateLegacyTimeRecords()
+  await StorageService.pruneTimeRecords()
   await ensureAlarms()
   await TimeTracker.refresh()
   console.log('[Limina] Service Worker installed')
 })
 
 chrome.runtime.onStartup.addListener(async () => {
+  await StorageService.pruneTimeRecords()
   await ensureAlarms()
   await updateBadge()
   await TimeTracker.refresh()
@@ -63,16 +65,15 @@ chrome.tabs.onActivated.addListener(() => {
   void TimeTracker.refresh()
 })
 
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (tab.active && (changeInfo.url || changeInfo.status === 'complete')) {
     void TimeTracker.refresh()
   }
 
-  // SPA（history.pushState）換頁不會重新注入 content script，主動通知重新判斷
+  // SPA（history.pushState）換頁不會重新注入 content script，通知它以新網址重新判斷
   if (changeInfo.url && changeInfo.url.startsWith('http')) {
-    const status = await checkBlockWithTimer(changeInfo.url)
-    chrome.tabs.sendMessage(tabId, { type: 'BLOCK_STATUS', status }).catch(() => {
-      // Content script 尚未就緒，載入後會自行查詢
+    chrome.tabs.sendMessage(tabId, { type: 'URL_CHANGED' }).catch(() => {
+      // Content script 尚未就緒，載入後會自行判斷
     })
   }
 })
@@ -106,8 +107,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       break
     }
     case ALARM_DAY_CHANGE: {
-      // 跨午夜的時間已由 TimeTracker 切分，這裡只確保資料寫入
+      // 跨午夜的時間已由 TimeTracker 切分，這裡確保資料寫入並清理過期資料
       await TimeTracker.flush()
+      await StorageService.pruneTimeRecords()
       break
     }
     case ALARM_TRACKER: {
@@ -135,26 +137,11 @@ async function handleMessage(
   msg: MessageType,
   sender: chrome.runtime.MessageSender,
 ): Promise<MessageResponse> {
+  // 只處理「寫入」與需要背景權限的指令；popup / content script 的讀取直接走 chrome.storage
   switch (msg.type) {
-    case 'GET_STATUS': {
-      const status = await checkBlockWithTimer(msg.url)
-      const settings = await StorageService.getSettings()
-      return { success: true, data: { status, settings } }
-    }
-
-    case 'GET_SETTINGS': {
-      const settings = await StorageService.getSettings()
-      return { success: true, data: settings }
-    }
-
     case 'UPDATE_SETTINGS': {
       await StorageService.updateSettings(msg.settings)
       return { success: true }
-    }
-
-    case 'GET_BLOCKLIST': {
-      const blocklist = await StorageService.getBlocklist()
-      return { success: true, data: blocklist }
     }
 
     case 'ADD_BLOCK': {
@@ -192,13 +179,8 @@ async function handleMessage(
       return { success: true }
     }
 
-    case 'GET_TIMER_STATE': {
-      const timerState = await StorageService.getTimerState()
-      return { success: true, data: timerState }
-    }
-
     case 'SNOOZE': {
-      // 寫入全域 snooze 狀態（所有分頁的 checkBlockWithTimer 都會感知），並以 alarm 精確解除
+      // 寫入全域 snooze 狀態（所有分頁透過 storage.onChanged 感知），並以 alarm 精確解除
       const minutes = clampInt(msg.minutes, SNOOZE_MIN, SNOOZE_MAX, 5)
       await StorageService.setSnoozeUntil(Date.now() + minutes * 60 * 1000)
       await chrome.alarms.create(ALARM_SNOOZE, { delayInMinutes: minutes })
@@ -214,8 +196,9 @@ async function handleMessage(
     case 'GET_TIME_STATS': {
       // 確保取得統計資料前先 flush 目前累積的時間
       await TimeTracker.flush()
-      const timeRecords = await StorageService.getTimeRecords()
-      return { success: true, data: timeRecords }
+      const days = clampInt(msg.days, 1, TIME_RETENTION_DAYS, 30)
+      const timeByDay = await StorageService.getTimeByDay(recentDateKeys(days))
+      return { success: true, data: timeByDay }
     }
 
     case 'EXPORT_DATA': {

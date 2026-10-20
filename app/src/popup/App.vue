@@ -35,7 +35,7 @@ function onStorageChanged(
   if (changes.settings) void settingsStore.load(true)
   if (changes.blocklist) void blocklistStore.load(true)
   if (changes.timerState) void timerStore.load(true)
-  if (changes.timeRecords) statsStore.invalidate()
+  if (Object.keys(changes).some((k) => k.startsWith('time:'))) statsStore.invalidate()
 }
 
 onMounted(async () => {

@@ -1,24 +1,14 @@
 // src/popup/stores/useStatsStore.ts
 import { defineStore } from 'pinia'
 import { ref, shallowRef } from 'vue'
-import type { TimeRecord } from '@/types'
-import { localDateKey } from '@/utils/date'
+import type { TimeByDay } from '@/types'
+import { recentDateKeys } from '@/utils/date'
 
 const CACHE_TTL = 60_000 // 60 秒快取
-
-/** 最近 days 天（含今天）的本地日期 key，由舊到新 */
-function recentDateKeys(days: number): string[] {
-  const keys: string[] = []
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    keys.push(localDateKey(d))
-  }
-  return keys
-}
+const MAX_RANGE_DAYS = 30 // 統計頁最長顯示範圍，只向背景要這麼多天
 
 export const useStatsStore = defineStore('stats', () => {
-  const records = shallowRef<Record<string, TimeRecord>>({})
+  const byDay = shallowRef<TimeByDay>({})
   const loading = ref(false)
   const lastFetchedAt = ref(0)
 
@@ -26,9 +16,11 @@ export const useStatsStore = defineStore('stats', () => {
     if (!force && lastFetchedAt.value && Date.now() - lastFetchedAt.value < CACHE_TTL) return
 
     loading.value = true
-    const res = await chrome.runtime.sendMessage({ type: 'GET_TIME_STATS' }).catch(() => undefined)
+    const res = await chrome.runtime
+      .sendMessage({ type: 'GET_TIME_STATS', days: MAX_RANGE_DAYS })
+      .catch(() => undefined)
     if (res?.success) {
-      records.value = res.data ?? {}
+      byDay.value = res.data ?? {}
       lastFetchedAt.value = Date.now()
     }
     loading.value = false
@@ -38,25 +30,27 @@ export const useStatsStore = defineStore('stats', () => {
   function getDateRangeStats(days: number): { date: string; ms: number }[] {
     return recentDateKeys(days).map((date) => {
       let ms = 0
-      for (const rec of Object.values(records.value)) ms += rec.daily[date] ?? 0
+      for (const v of Object.values(byDay.value[date] ?? {})) ms += v
       return { date, ms }
     })
   }
 
   /** 區間內各網域的總時長，由多到少 */
   function getDomainStats(days: number): { domain: string; ms: number }[] {
-    const dates = recentDateKeys(days)
-    const result: { domain: string; ms: number }[] = []
-    for (const [domain, rec] of Object.entries(records.value)) {
-      const ms = dates.reduce((sum, d) => sum + (rec.daily[d] ?? 0), 0)
-      if (ms > 0) result.push({ domain, ms })
+    const totals = new Map<string, number>()
+    for (const date of recentDateKeys(days)) {
+      for (const [domain, ms] of Object.entries(byDay.value[date] ?? {})) {
+        totals.set(domain, (totals.get(domain) ?? 0) + ms)
+      }
     }
-    return result.sort((a, b) => b.ms - a.ms)
+    return [...totals]
+      .map(([domain, ms]) => ({ domain, ms }))
+      .sort((a, b) => b.ms - a.ms)
   }
 
   function invalidate() {
     lastFetchedAt.value = 0
   }
 
-  return { records, loading, load, getDateRangeStats, getDomainStats, invalidate }
+  return { byDay, loading, load, getDateRangeStats, getDomainStats, invalidate }
 })

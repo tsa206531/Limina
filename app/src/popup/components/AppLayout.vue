@@ -1,11 +1,12 @@
 <template>
   <div class="relative w-full h-full min-h-screen flex flex-col z-10 glass-panel shadow-2xl overflow-hidden">
-    <!-- 背景裝飾球 -->
+    <!-- 背景裝飾球：保持靜態。它們位於所有毛玻璃卡片下方，
+         一旦持續動畫，每張卡片的 backdrop-filter 模糊都得每幀重算 -->
     <div class="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] -z-10 pointer-events-none animate-fade-in duration-1000">
-      <div class="w-full h-full bg-primary/20 rounded-full blur-[80px] animate-breathe"></div>
+      <div class="w-full h-full bg-primary/20 rounded-full blur-[80px] opacity-60"></div>
     </div>
     <div class="fixed bottom-[-10%] right-[-10%] w-[60%] h-[60%] -z-10 pointer-events-none animate-fade-in duration-1000 delay-300 opacity-0" style="animation-fill-mode: forwards;">
-      <div class="w-full h-full bg-blue-300/20 dark:bg-blue-900/20 rounded-full blur-[100px] animate-float"></div>
+      <div class="w-full h-full bg-blue-300/20 dark:bg-blue-900/20 rounded-full blur-[100px]"></div>
     </div>
 
 

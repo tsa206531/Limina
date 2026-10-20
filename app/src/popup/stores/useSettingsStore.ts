@@ -15,12 +15,11 @@ export const useSettingsStore = defineStore('settings', () => {
     // 快取未過期且非強制重新整理，直接跳過
     if (!force && lastFetchedAt.value && Date.now() - lastFetchedAt.value < CACHE_TTL) return
 
+    // 讀取直接走 storage，不經過 Service Worker；寫入仍交給背景統一序列化
     loading.value = true
-    const res = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }).catch(() => undefined)
-    if (res?.success) {
-      settings.value = { ...DEFAULT_SETTINGS, ...res.data }
-      lastFetchedAt.value = Date.now()
-    }
+    const { settings: stored } = await chrome.storage.local.get('settings')
+    settings.value = { ...DEFAULT_SETTINGS, ...(stored as Partial<AppSettings> | undefined) }
+    lastFetchedAt.value = Date.now()
     loading.value = false
   }
 
