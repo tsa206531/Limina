@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Limina",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "幫助你專注！封鎖分心網站、計時器倒數，打造高效工作流程。",
   "permissions": [
     "storage",
@@ -19,8 +19,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/content/index.ts"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content/index.ts"
+      ],
       "run_at": "document_end"
     }
   ],
@@ -28,12 +32,14 @@
     "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
   "icons": {
     "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   }

@@ -2,140 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens（doc/style/style.md）──────────────────────────
+   深色模式跟隨系統設定：只翻轉變數，品牌色兩個主題相同。
+   用 media query 而非 class，popup 開啟時不需要 JS、也不會閃爍。 */
+:root {
+  color-scheme: light;
+  --ink-900: #05060f;
+  --ink-800: #1f2933;
+  --ink-700: #353535;
+  --ink-600: #5e5e5e;
+  --ink-500: #6b7280;
+  --ink-400: #9ca3af;
+  --ink-300: #bababa;
+
+  --surface-page: #f4f4f8;
+  --surface-card: #ffffff;
+  --surface-subtle: #f8f8f9;
+  --surface-muted: #e9e9ec;
+
+  --line-200: #e6e6ea;
+  --line-300: #d9d9d9;
+
+  --glass-nav: rgba(255, 255, 255, 0.8);
+  --hero-glow: radial-gradient(ellipse 420px 300px at 30% 0%, rgba(0, 159, 183, 0.18) 0%, rgba(0, 159, 183, 0.05) 50%, transparent 75%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ink-900: #f0f6fc;
+    --ink-800: #e6edf3;
+    --ink-700: #c9d1d9;
+    --ink-600: #8b949e;
+    --ink-500: #8b949e;
+    --ink-400: #6e7681;
+    --ink-300: #484f58;
+
+    --surface-page: #0d1117;
+    --surface-card: #161b22;
+    --surface-subtle: #21262d;
+    --surface-muted: #30363d;
+
+    --line-200: #30363d;
+    --line-300: #30363d;
+
+    --glass-nav: rgba(22, 27, 34, 0.85);
+  }
+}
+
 @layer base {
   html,
   body {
-    @apply bg-background-light dark:bg-background-dark font-display text-text-main dark:text-gray-100;
+    @apply bg-surface-page font-sans text-ink-800 antialiased;
+  }
+
+  /* 全站焦點樣式：鍵盤操作時才顯示，不用 ring */
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-brand;
+  }
+
+  button:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 }
 
 @layer components {
-  /* Scrollbar override */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background-color: rgba(100, 122, 130, 0.2);
-    border-radius: 20px;
+  /* 資訊卡：不可點擊，因此沒有 hover 上浮 */
+  .card {
+    @apply rounded-xl border border-line-200 bg-surface-card;
   }
 
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .eyebrow {
+    @apply text-xs font-bold tracking-wider text-brand;
   }
 
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  /* 按鈕：Active 一律下壓 1px，不縮放；Disabled 由 base 統一處理 */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-bold transition active:translate-y-px disabled:translate-y-0;
   }
-  .dark .glass-panel {
-    background: rgba(16, 32, 34, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .glass-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.05),
-      0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  }
-  .dark .glass-card {
-    background: rgba(26, 43, 48, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-  }
-
-  .glass-card-strong {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border-radius: 16px;
-  }
-  .dark .glass-card-strong {
-    background: rgba(26, 43, 48, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  }
-
-  .decorative-sphere {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.6;
-    z-index: 0;
-  }
-
   .btn-primary {
-    @apply bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl px-4 py-3 text-sm transition-all duration-150;
-    box-shadow: 0 4px 14px rgba(8, 131, 150, 0.35);
+    @apply btn rounded-md border border-brand/20 bg-brand px-5 py-3 text-white shadow-btn hover:bg-brand/80;
+  }
+  .btn-ghost {
+    @apply btn rounded-md border border-brand/20 bg-brand/10 px-4 py-2.5 text-brand hover:bg-brand/[0.16];
+  }
+  .btn-neutral {
+    @apply btn rounded-md border border-line-300 bg-surface-subtle px-4 py-2.5 text-ink-800 hover:bg-surface-muted;
+  }
+  .btn-sm {
+    @apply rounded-sm px-3 py-1.5 text-sm;
+  }
+  .icon-btn {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-sm text-ink-600 transition hover:bg-brand/10 hover:text-brand;
   }
 
-  .btn-primary:hover {
-    @apply scale-[1.02];
-    box-shadow: 0 6px 20px rgba(8, 131, 150, 0.5);
+  .input {
+    @apply rounded-md border border-line-300 bg-surface-page px-4 py-2.5 text-sm text-ink-900 placeholder:text-ink-500 focus-visible:outline-offset-1;
   }
 
-  .btn-primary:active {
-    @apply scale-[0.98];
+  /* 膠囊選項（時長、模式、範圍）：選中 = 品牌底 + 品牌字 + 粗體 */
+  .segmented {
+    @apply flex gap-1 rounded-md border border-line-200 bg-surface-subtle p-1;
+  }
+  .segment {
+    @apply flex-1 rounded-sm px-2 py-1.5 text-sm font-medium text-ink-500 transition hover:text-brand;
+  }
+  .segment[aria-pressed='true'],
+  .segment[aria-selected='true'] {
+    @apply bg-surface-card font-bold text-brand shadow-sm;
   }
 
-  .btn-secondary {
-    @apply font-medium rounded-xl px-4 py-3 text-sm transition-all duration-150;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold;
   }
 
-  .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    @apply scale-[1.01];
+  /* Notice：底 8% + 框 35% */
+  .notice {
+    @apply flex items-start gap-3 rounded-md border px-4 py-3 text-sm;
   }
-
-  .btn-danger {
-    @apply font-medium rounded-xl px-4 py-3 text-sm transition-all duration-150;
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.25);
-    color: rgba(252, 165, 165, 0.9);
+  .notice-info {
+    @apply notice border-brand/[0.35] bg-brand/[0.08];
   }
-
-  .btn-danger:hover {
-    background: rgba(239, 68, 68, 0.2);
+  .notice-warning {
+    @apply notice border-warning/[0.35] bg-warning/[0.08];
   }
-
-  /* Custom Animations */
-  @keyframes slide-up-fade {
-    0% {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-slide-up-fade {
-    animation: slide-up-fade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .delay-100 { animation-delay: 100ms; }
-  .delay-200 { animation-delay: 200ms; }
-  .delay-300 { animation-delay: 300ms; }
 }
 
 /* 系統設定為「減少動態效果」時，關閉所有動畫與轉場 */

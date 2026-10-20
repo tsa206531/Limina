@@ -1,132 +1,150 @@
 <template>
-  <div class="px-6 py-2 flex flex-col gap-6 animate-fade-in">
-    <!-- Global Protection Toggle -->
-    <div class="glass-panel rounded-2xl p-5 flex items-center justify-between">
-      <div class="flex flex-col gap-1 min-w-0">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary text-lg">public</span>
-          <h2 class="font-bold text-text-main dark:text-white">{{ $t('home.globalProtection') }}</h2>
-        </div>
-        <p class="text-sm text-text-secondary dark:text-gray-400 truncate">
-          {{ $t('home.current') }}: {{ currentHost || $t('home.none') }}
-          <span
-            v-if="currentHost"
-            class="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-            :class="statusClass"
-          >{{ statusLabel }}</span>
+  <div class="flex flex-col gap-3">
+    <!-- 完成一個專注時段 -->
+    <section v-if="timerStore.recentSession" class="card flex items-start gap-3 border-brand/[0.35] bg-brand/[0.08] p-4">
+      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+        <AppIcon name="sparkle" :size="22" />
+      </span>
+      <div class="flex-1">
+        <h2 class="font-bold text-ink-900">{{ $t('home.sessionDone') }}</h2>
+        <p class="mt-0.5 text-sm text-ink-700">
+          {{ $t('home.sessionDoneBody', { time: duration(timerStore.recentSession.ms, 'ceil') }) }}
         </p>
+        <button class="btn-primary btn-sm mt-3" @click="startAgain">{{ $t('home.again') }}</button>
       </div>
-      <label class="relative inline-flex items-center cursor-pointer shrink-0">
-        <input
-          type="checkbox"
-          class="sr-only peer"
-          :checked="settingsStore.settings.isEnabled"
-          @change="toggleBlock"
-        />
-        <div class="w-12 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 dark:peer-focus:ring-primary/80 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-primary shadow-inner"></div>
-      </label>
-    </div>
+      <button class="icon-btn -mr-2 -mt-2 h-8 w-8" :aria-label="$t('common.close')" @click="timerStore.dismissSession()">
+        <AppIcon name="x" :size="16" />
+      </button>
+    </section>
 
-    <!-- Timer Area -->
-    <div class="flex-1 flex flex-col items-center justify-center min-h-[300px]">
-      <div class="relative w-64 h-64 flex items-center justify-center">
-        <!-- SVG Progress Ring -->
-        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 256 256">
-          <circle class="text-slate-200 dark:text-slate-700/50" cx="128" cy="128" fill="none" r="110" stroke="currentColor" stroke-width="12"></circle>
+    <!-- 計時器 -->
+    <section class="card p-5">
+      <div class="relative mx-auto h-48 w-48">
+        <svg class="h-full w-full -rotate-90" viewBox="0 0 256 256" aria-hidden="true">
+          <circle cx="128" cy="128" r="112" fill="none" stroke="var(--line-200)" stroke-width="14" />
           <circle
-            class="text-dark-teal dark:text-primary transition-all duration-1000 ease-linear"
-            :class="{ 'animate-pulse-soft': timerStore.state.isActive }"
-            cx="128" cy="128" fill="none" r="110" stroke="currentColor"
+            cx="128" cy="128" r="112" fill="none" stroke="#009fb7" stroke-width="14" stroke-linecap="round"
+            class="transition-[stroke-dashoffset] duration-1000 ease-linear"
             :stroke-dasharray="circumference"
             :stroke-dashoffset="dashOffset"
-            stroke-linecap="round" stroke-width="12"
-          ></circle>
+          />
         </svg>
-
         <div class="absolute inset-0 flex flex-col items-center justify-center">
-          <div v-if="timerStore.hasTimer" class="flex flex-col items-center">
-            <span class="text-6xl font-bold text-text-main dark:text-white tracking-tighter tabular-nums">{{ timerStore.formatted() }}</span>
-            <span class="text-text-secondary dark:text-gray-400 font-medium mt-1">
-              {{ timerStore.isPaused ? $t('home.paused') : $t('home.focusing') }}
-            </span>
-          </div>
-          <div v-else class="flex flex-col items-center gap-2">
-            <input
-              v-model.number="timerMinutes"
-              type="number"
-              :min="TIMER_MIN" :max="TIMER_MAX"
-              class="w-32 bg-transparent text-center text-5xl font-bold text-text-main dark:text-white tracking-tighter tabular-nums focus:outline-none focus:ring-0 border-none p-0"
-              @blur="timerMinutes = clampInt(timerMinutes, TIMER_MIN, TIMER_MAX, 25)"
-              @keyup.enter="toggleTimer"
-            />
-            <span class="text-text-secondary dark:text-gray-400 font-medium mt-1">{{ $t('home.minutes') }}</span>
-          </div>
+          <span class="text-5xl font-bold tabular-nums tracking-tight text-ink-900" aria-live="off">
+            {{ timerStore.hasTimer ? timerStore.formatted() : formatClock(selectedMinutes * 60) }}
+          </span>
         </div>
-        <div class="absolute top-0 w-2 h-4 bg-primary rounded-full transform -translate-y-1/2"></div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="mt-8 flex items-center gap-8 w-full justify-center">
+      <p class="mt-3 text-center text-sm font-medium" :class="timerStore.hasTimer ? 'text-brand' : 'text-ink-600'">
+        {{ statusLine }}
+      </p>
+
+      <!-- 開始前：時長與封鎖方式 -->
+      <template v-if="!timerStore.hasTimer">
+        <div class="segmented mt-4" role="group" :aria-label="$t('home.minutes')">
+          <button
+            v-for="m in TIMER_PRESETS"
+            :key="m"
+            class="segment tabular-nums"
+            :aria-pressed="!customMode && selectedMinutes === m"
+            @click="selectPreset(m)"
+          >
+            {{ m }}
+          </button>
+          <button class="segment" :aria-pressed="customMode" @click="customMode = true">
+            {{ $t('common.custom') }}
+          </button>
+        </div>
+        <label v-if="customMode" class="mt-2 flex items-center gap-2">
+          <input
+            v-model.number="customMinutes"
+            type="number"
+            :min="TIMER_MIN" :max="TIMER_MAX"
+            class="input w-24 text-center tabular-nums"
+            @blur="customMinutes = clampInt(customMinutes, TIMER_MIN, TIMER_MAX, 25)"
+            @keyup.enter="toggleTimer"
+          />
+          <span class="text-sm text-ink-600">{{ $t('home.minutes') }}</span>
+        </label>
+
+        <p class="eyebrow mt-4">{{ $t('home.modeTitle') }}</p>
+        <div class="segmented mt-2" role="group" :aria-label="$t('home.modeTitle')">
+          <button
+            v-for="m in MODES"
+            :key="m"
+            class="segment"
+            :aria-pressed="mode === m"
+            @click="setMode(m)"
+          >
+            {{ $t(`home.mode.${m}`) }}
+          </button>
+        </div>
+        <p class="mt-2 text-xs leading-relaxed text-ink-600">{{ $t(`home.modeDesc.${mode}`) }}</p>
+      </template>
+
+      <!-- 控制列 -->
+      <div class="mt-5 flex items-center justify-center gap-6">
         <button
-          class="group flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex h-12 w-12 items-center justify-center rounded-full border border-line-300 bg-surface-subtle text-ink-700 transition hover:bg-surface-muted active:translate-y-px"
           :disabled="!timerStore.hasTimer"
+          :aria-label="$t('home.reset')"
+          :title="$t('home.reset')"
           @click="timerStore.cancel()"
         >
-          <div class="w-12 h-12 rounded-full bg-white dark:bg-surface-dark shadow-sm hover:shadow-md border border-slate-100 dark:border-white/10 flex items-center justify-center transition-all transform group-hover:-translate-y-1 group-active:scale-95">
-            <span class="material-symbols-outlined text-2xl group-hover:text-amber-500 transition-colors">restart_alt</span>
-          </div>
-          <span class="text-xs font-medium">{{ $t('home.reset') }}</span>
+          <AppIcon name="arrow-counter-clockwise" :size="20" />
         </button>
 
         <button
-          class="group relative flex items-center justify-center w-20 h-20 bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/30 hover:shadow-2xl hover:shadow-primary/50 transition-all transform hover:scale-105 active:scale-95 duration-300"
+          class="flex h-16 w-16 items-center justify-center rounded-lg bg-brand text-white shadow-btn transition hover:bg-brand/80 active:translate-y-px"
+          :aria-label="primaryLabel"
+          :title="primaryLabel"
           @click="toggleTimer"
         >
-          <span class="material-symbols-outlined text-4xl filled">
-            {{ timerStore.state.isActive ? 'pause' : 'play_arrow' }}
-          </span>
+          <AppIcon :name="timerStore.state.isActive ? 'pause' : 'play'" :size="28" />
         </button>
 
         <button
-          class="group flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex h-12 w-12 items-center justify-center rounded-full border border-line-300 bg-surface-subtle text-ink-700 transition hover:bg-surface-muted active:translate-y-px"
           :disabled="!timerStore.hasTimer"
+          :aria-label="$t('home.addTime')"
+          :title="$t('home.addTime')"
           @click="timerStore.extend(5)"
         >
-          <div class="w-12 h-12 rounded-full bg-white dark:bg-surface-dark shadow-sm hover:shadow-md border border-slate-100 dark:border-white/10 flex items-center justify-center transition-all transform group-hover:scale-110 group-active:scale-95">
-            <span class="material-symbols-outlined text-2xl group-hover:text-emerald-500 transition-colors">more_time</span>
-          </div>
-          <span class="text-xs font-medium">{{ $t('home.addTime') }}</span>
+          <AppIcon name="clock-clockwise" :size="20" />
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- Quick Actions -->
-    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3">
-      <div class="flex items-center gap-4">
-        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-          <span class="material-symbols-outlined">trending_up</span>
+    <!-- 目前網站 -->
+    <section class="card p-4">
+      <p class="eyebrow">{{ $t('home.currentSite') }}</p>
+      <template v-if="currentHost">
+        <div class="mt-2 flex items-center gap-2">
+          <AppIcon name="globe" :size="18" class="text-ink-500" />
+          <span class="min-w-0 flex-1 truncate font-bold text-ink-900">{{ currentHost }}</span>
+          <span class="badge" :class="statusClass">{{ statusLabel }}</span>
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-xs font-bold uppercase text-text-secondary tracking-wider">{{ $t('home.quickActions') }}</p>
-          <select
-            v-if="domainChoices.length > 1"
-            v-model="selectedDomain"
-            class="mt-1 w-full bg-white/50 dark:bg-black/20 text-text-main dark:text-white rounded-lg px-2 py-1 text-xs border border-white/20 dark:border-white/10 focus:outline-none focus:border-primary/50"
-          >
-            <option v-for="d in domainChoices" :key="d" :value="d">{{ d }}</option>
-          </select>
-          <div class="flex items-center gap-2 mt-1">
-            <button class="flex-1 py-1.5 px-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-xs font-medium transition-colors disabled:opacity-50" @click="quickAdd('locked')" :disabled="!selectedDomain">
-              {{ $t('home.lockSite') }}
-            </button>
-            <button class="flex-1 py-1.5 px-3 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-lg text-xs font-medium transition-colors disabled:opacity-50" @click="quickAdd('white')" :disabled="!selectedDomain">
-              {{ $t('home.allowSite') }}
-            </button>
-          </div>
-          <p v-if="quickMsg" class="text-xs mt-1" :class="quickMsgType === 'ok' ? 'text-green-500' : 'text-red-500'">{{ quickMsg }}</p>
+        <select
+          v-if="domainChoices.length > 1"
+          v-model="selectedDomain"
+          class="input mt-3 w-full py-2"
+        >
+          <option v-for="d in domainChoices" :key="d" :value="d">{{ d }}</option>
+        </select>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button class="btn-ghost btn-sm" :disabled="!selectedDomain || selectedListType === 'locked'" @click="quickAdd('locked')">
+            <AppIcon name="prohibit" :size="16" />
+            {{ $t('home.lockSite') }}
+          </button>
+          <button class="btn-neutral btn-sm" :disabled="!selectedDomain || selectedListType === 'white'" @click="quickAdd('white')">
+            <AppIcon name="check" :size="16" />
+            {{ $t('home.allowSite') }}
+          </button>
         </div>
-      </div>
-    </div>
+      </template>
+      <p v-else class="mt-2 text-sm text-ink-500">{{ $t('home.noSite') }}</p>
+    </section>
   </div>
 </template>
 
@@ -135,15 +153,23 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { domainOptions } from '@/utils/domain'
 import { evaluateBlock, readBlockState } from '@/utils/block'
-import { TIMER_MAX, TIMER_MIN, clampInt } from '@/types'
-import type { BlockStatus } from '@/types'
+import {
+  TIMER_MAX, TIMER_MIN, TIMER_PRESETS, clampInt, focusModeOf, settingsForMode,
+  type BlockStatus, type FocusMode,
+} from '@/types'
+import AppIcon from '../components/AppIcon.vue'
+import { showToast } from '../composables/useToast'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { useBlocklistStore } from '../stores/useBlocklistStore'
-import { useTimerStore } from '../stores/useTimerStore'
+import { useBlockingStore } from '../stores/useBlockingStore'
+import { formatClock, useTimerStore } from '../stores/useTimerStore'
 
-const { t } = useI18n()
+const MODES: FocusMode[] = ['blocklist', 'whitelist', 'free']
+
+const { t, duration } = useI18n()
 const settingsStore = useSettingsStore()
 const blocklistStore = useBlocklistStore()
+const blockingStore = useBlockingStore()
 const timerStore = useTimerStore()
 
 const currentUrl = ref('')
@@ -151,9 +177,33 @@ const currentHost = ref('')
 const blockStatus = ref<BlockStatus>('none')
 const domainChoices = ref<string[]>([])
 const selectedDomain = ref('')
-const timerMinutes = ref(25)
-const quickMsg = ref('')
-const quickMsgType = ref<'ok' | 'err'>('ok')
+
+const presetMinutes = ref(25)
+const customMode = ref(false)
+const customMinutes = ref(25)
+const selectedMinutes = computed(() =>
+  customMode.value ? clampInt(customMinutes.value, TIMER_MIN, TIMER_MAX, 25) : presetMinutes.value,
+)
+
+const mode = computed(() => focusModeOf(settingsStore.settings))
+
+/** 下拉選中的網域目前在哪份名單（決定快速加入按鈕是否可按） */
+const selectedListType = computed(() =>
+  blocklistStore.entries.find((e) => e.domain === selectedDomain.value)?.type ?? null,
+)
+
+const statusLine = computed(() => {
+  const modeLabel = t(`home.mode.${mode.value}`)
+  if (timerStore.state.isActive) return t('home.statusFocusing', { mode: modeLabel })
+  if (timerStore.isPaused) return t('home.statusPaused', { mode: modeLabel })
+  return t('home.statusIdle')
+})
+
+const primaryLabel = computed(() => {
+  if (timerStore.state.isActive) return t('home.pause')
+  if (timerStore.isPaused) return t('home.resume')
+  return t('home.start')
+})
 
 const statusLabel = computed(() => ({
   locked: t('home.statusLocked'),
@@ -161,15 +211,15 @@ const statusLabel = computed(() => ({
   none: t('home.statusNone'),
 })[blockStatus.value])
 
+// 品牌實色 = 會被擋；品牌外框 = 永遠允許；中性 = 不在名單
 const statusClass = computed(() => ({
-  locked: 'bg-red-500/10 text-red-500',
-  white: 'bg-green-500/10 text-green-500',
-  none: 'bg-slate-500/10 text-text-secondary',
+  locked: 'bg-brand text-white',
+  white: 'border border-brand/20 bg-brand/10 text-brand',
+  none: 'border border-line-300 bg-surface-subtle text-ink-600',
 })[blockStatus.value])
 
 // SVG Circle Math
-const radius = 110
-const circumference = 2 * Math.PI * radius
+const circumference = 2 * Math.PI * 112
 const dashOffset = computed(() => {
   if (!timerStore.hasTimer || timerStore.totalSec <= 0) return 0
   const fraction = Math.min(1, timerStore.remainingSec / timerStore.totalSec)
@@ -178,13 +228,21 @@ const dashOffset = computed(() => {
 
 async function refreshStatus() {
   if (!currentUrl.value) return
-  // 與 content script 同一套規則，直接在 popup 計算
-  blockStatus.value = evaluateBlock(await readBlockState(), currentUrl.value)
+  // 與 content script 同一套規則，直接在 popup 計算。
+  // 忽略暫停封鎖：暫停是暫時的，頁首已有橫幅說明，這裡顯示網站本身的名單狀態
+  const state = await readBlockState()
+  blockStatus.value = evaluateBlock({ ...state, snoozeUntil: 0 }, currentUrl.value)
 }
 
 onMounted(async () => {
-  await Promise.all([settingsStore.load(), timerStore.load(true)])
-  timerMinutes.value = timerStore.state.lastInputMin || 25
+  await Promise.all([settingsStore.load(), timerStore.load(true), blocklistStore.load()])
+  const last = timerStore.state.lastInputMin || 25
+  if (TIMER_PRESETS.includes(last)) presetMinutes.value = last
+  else {
+    customMode.value = true
+    customMinutes.value = last
+  }
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   if (tab?.url?.startsWith('http')) {
     currentUrl.value = tab.url
@@ -195,38 +253,36 @@ onMounted(async () => {
   }
 })
 
-// 名單、設定、計時器改變時，重新判斷目前網站的狀態
+// 名單、設定、計時器、暫停狀態改變時，重新判斷目前網站
 watch(
-  () => [blocklistStore.entries, settingsStore.settings, timerStore.state],
+  () => [blocklistStore.entries, settingsStore.settings, timerStore.state, blockingStore.snoozeUntil],
   () => void refreshStatus(),
 )
 
-async function toggleBlock() {
-  await settingsStore.update({ isEnabled: !settingsStore.settings.isEnabled })
+function selectPreset(m: number) {
+  customMode.value = false
+  presetMinutes.value = m
 }
 
-function showMsg(msg: string, type: 'ok' | 'err' = 'ok') {
-  quickMsg.value = msg
-  quickMsgType.value = type
-  setTimeout(() => { quickMsg.value = '' }, 2500)
+async function setMode(m: FocusMode) {
+  await settingsStore.update(settingsForMode(m))
 }
 
 async function quickAdd(type: 'locked' | 'white') {
   const domain = selectedDomain.value
   if (!domain) return
   const res = await blocklistStore.addEntry({ domain, type })
-  if (!res || !res.created) return showMsg(t('home.alreadyInList'), 'err')
-  showMsg(t(type === 'locked' ? 'home.lockedMsg' : 'home.allowedMsg', { domain }))
+  if (!res || !res.created) return showToast(t('home.alreadyInList'), 'err')
+  showToast(t(type === 'locked' ? 'home.lockedMsg' : 'home.allowedMsg', { domain }))
 }
 
 async function toggleTimer() {
-  if (timerStore.state.isActive) {
-    await timerStore.pause()
-  } else if (timerStore.isPaused) {
-    await timerStore.resume()
-  } else {
-    timerMinutes.value = clampInt(timerMinutes.value, TIMER_MIN, TIMER_MAX, 25)
-    await timerStore.start(timerMinutes.value)
-  }
+  if (timerStore.state.isActive) await timerStore.pause()
+  else if (timerStore.isPaused) await timerStore.resume()
+  else await timerStore.start(selectedMinutes.value)
+}
+
+async function startAgain() {
+  await timerStore.start(timerStore.state.lastInputMin || selectedMinutes.value)
 }
 </script>

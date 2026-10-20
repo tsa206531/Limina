@@ -34,18 +34,22 @@ function matches(list: BlockListEntry[], type: BlockListEntry['type'], levels: s
   return list.some((e) => e.type === type && levels.includes(e.domain))
 }
 
+/** 封鎖是否暫停中（封鎖頁的「休息」或 popup 的「暫停封鎖」） */
+export function isBlockingPaused(state: BlockState, now: number = Date.now()): boolean {
+  return state.snoozeUntil > 0 && now < state.snoozeUntil
+}
+
 /**
  * 封鎖判斷，優先順序：
- * 1. 封鎖關閉 / 全域 Snooze 生效 → 放行
- * 2. 白名單 → 放行（任何模式下皆優先）
- * 3. 終極專注模式（focusWhitelistOnly）且計時中 → 白名單以外全部封鎖
- * 4. 自由時間模式（timerPausesBlocking）且計時中 → 放行
- * 5. 鎖定名單 → 封鎖
+ * 1. 封鎖暫停中 → 放行
+ * 2. 永遠允許（白名單）→ 放行（任何模式下皆優先）
+ * 3. 只允許白名單模式且計時中 → 其他網站全部封鎖
+ * 4. 自由時間模式且計時中 → 放行
+ * 5. 封鎖名單 → 封鎖
  */
 export function evaluateBlock(state: BlockState, url: string, now: number = Date.now()): BlockStatus {
-  const { settings, timer, snoozeUntil, blocklist } = state
-  if (!settings.isEnabled) return 'none'
-  if (snoozeUntil > 0 && now < snoozeUntil) return 'none'
+  const { settings, timer, blocklist } = state
+  if (isBlockingPaused(state, now)) return 'none'
 
   const levels = extractDomainLevels(url)
   if (levels.length === 0) return 'none'
@@ -55,4 +59,11 @@ export function evaluateBlock(state: BlockState, url: string, now: number = Date
   if (settings.timerPausesBlocking && timer.isActive) return 'none'
   if (matches(blocklist, 'locked', levels)) return 'locked'
   return 'none'
+}
+
+/** 被封鎖的原因（封鎖頁顯示用）；呼叫前應已確認 evaluateBlock === 'locked' */
+export function blockReason(state: BlockState, url: string): 'focus-whitelist' | 'blocklist' {
+  const { settings, timer, blocklist } = state
+  const listed = matches(blocklist, 'locked', extractDomainLevels(url))
+  return settings.focusWhitelistOnly && timer.isActive && !listed ? 'focus-whitelist' : 'blocklist'
 }

@@ -45,3 +45,6 @@ node_modules/
 *.zip
 *.pem
 *.crx
+*.claude
+# Claude Code local skills / settings
+.claude/

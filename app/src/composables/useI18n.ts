@@ -3,7 +3,7 @@
 // 實際字典與查詢邏輯在 src/locales/translate.ts，與 background / content script 共用
 
 import { ref, computed, readonly } from 'vue'
-import { resolveLang, translate, type LangSetting } from '@/locales/translate'
+import { formatDuration, resolveLang, translate, type LangSetting } from '@/locales/translate'
 
 // Global reactive state
 const _locale = ref<LangSetting>('auto')
@@ -14,7 +14,12 @@ export function useI18n() {
     return translate(_lang.value, key, params)
   }
 
-  return { t, locale: readonly(_locale), lang: _lang }
+  /** 時間長度 → 在地化字串；'ceil' 用於倒數剩餘時間 */
+  function duration(ms: number, round: 'floor' | 'ceil' = 'floor'): string {
+    return formatDuration(_lang.value, ms, round)
+  }
+
+  return { t, duration, locale: readonly(_locale), lang: _lang }
 }
 
 export function setLocale(locale: LangSetting) {

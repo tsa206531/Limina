@@ -1,68 +1,57 @@
 import type { Config } from "tailwindcss";
 
+// 設計規範：doc/style/style.md
+// - 單一品牌色相 #009fb7，層次靠 alpha（bg-brand/10、border-brand/20…）
+// - 中性色、表面、分隔線以 CSS 變數定義（src/popup/style.css），深色模式只翻轉變數，元件不寫 dark: 前綴
+// - 圓角級距沿用 style.md；popup 只有 360px 寬，卡片用 xl（24px）而非網站的 50px
 export default {
   content: ["./src/**/*.{vue,ts,tsx,html}", "./src/popup/index.html"],
-  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        primary: "#088396",
-        "primary-dark": "#066878",
-        "background-light": "#F2F7F9",
-        "background-dark": "#102022",
-        "surface-light": "rgba(255, 255, 255, 0.6)",
-        "surface-dark": "rgba(26, 43, 48, 0.6)",
-        "text-main": "#1A2B30",
-        "text-secondary": "#647A82",
-        "accent-teal": "#7AB2B2",
-        "dark-teal": "#09637E",
-      },
-      backdropBlur: {
-        glass: "12px",
-        "glass-heavy": "20px",
-        xs: "2px",
-      },
-      animation: {
-        "fade-in": "fadeIn 0.3s ease-out",
-        "slide-up": "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-        "pulse-soft": "pulseSoft 2s ease-in-out infinite",
-        shimmer: "shimmer 1.5s ease-in-out infinite",
-        breathe: "breathe 8s ease-in-out infinite",
-        float: "float 12s ease-in-out infinite",
-      },
-      keyframes: {
-        fadeIn: { from: { opacity: "0" }, to: { opacity: "1" } },
-        slideUp: {
-          from: { opacity: "0", transform: "translateY(12px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
+        brand: "rgb(0 159 183 / <alpha-value>)", // 深色模式不翻轉
+        danger: "rgb(251 44 54 / <alpha-value>)",
+        warning: "rgb(254 154 0 / <alpha-value>)",
+        ink: {
+          900: "var(--ink-900)",
+          800: "var(--ink-800)",
+          700: "var(--ink-700)",
+          600: "var(--ink-600)",
+          500: "var(--ink-500)",
+          400: "var(--ink-400)",
+          300: "var(--ink-300)",
         },
-        pulseSoft: { "0%,100%": { opacity: "1" }, "50%": { opacity: "0.6" } },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
+        surface: {
+          page: "var(--surface-page)",
+          card: "var(--surface-card)",
+          subtle: "var(--surface-subtle)",
+          muted: "var(--surface-muted)",
         },
-        breathe: {
-          "0%, 100%": { opacity: "0.4", transform: "scale(1)" },
-          "50%": { opacity: "0.8", transform: "scale(1.05)" },
-        },
-        float: {
-          "0%, 100%": { transform: "translateY(0) translateX(0)" },
-          "33%": { transform: "translateY(-10px) translateX(10px)" },
-          "66%": { transform: "translateY(10px) translateX(-10px)" },
+        line: {
+          200: "var(--line-200)",
+          300: "var(--line-300)",
         },
       },
       fontFamily: {
-        // Inter 由 @fontsource-variable/inter 本地打包；中日文退回系統字體
-        display: ["Inter Variable", "system-ui", "Noto Sans TC", "Microsoft JhengHei", "sans-serif"],
-        sans: ["Inter Variable", "system-ui", "Noto Sans TC", "Microsoft JhengHei", "sans-serif"],
+        // Inter（本地打包）負責拉丁字與數字，中日文交給系統字體
+        sans: ["Inter Variable", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Hiragino Sans", "sans-serif"],
       },
       borderRadius: {
-        xl: "1.5rem",
+        sm: "10px",
+        md: "16px",
+        lg: "20px",
+        xl: "24px",
+      },
+      boxShadow: {
+        btn: "0 5px 8px -5px rgba(0,159,183,0.2), 0 13px 20px -4px rgba(0,159,183,0.2)",
+      },
+      transitionDuration: {
+        DEFAULT: "150ms",
+      },
+      transitionTimingFunction: {
+        DEFAULT: "cubic-bezier(0.4, 0, 0.2, 1)",
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/container-queries"),
-    require("@tailwindcss/forms"),
-  ],
+  plugins: [],
 } satisfies Config;

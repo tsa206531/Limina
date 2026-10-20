@@ -69,30 +69,18 @@ export function domainOptions(url: string): string[] {
     .reverse()
 }
 
-type Category = 'media' | 'social' | 'developer' | 'mail' | 'general'
+export type DomainCategory = 'media' | 'social' | 'developer' | 'mail' | 'general'
 
-const CATEGORY_RULES: [Category, string[]][] = [
+const CATEGORY_RULES: [DomainCategory, string[]][] = [
   ['media', ['youtube', 'netflix', 'twitch', 'bilibili', 'spotify']],
   ['social', ['facebook', 'twitter', 'x.com', 'instagram', 'reddit', 'threads', 'tiktok', 'dcard', 'ptt']],
   ['developer', ['github', 'gitlab', 'stackoverflow', 'npmjs']],
   ['mail', ['mail.', 'gmail', 'outlook']],
 ]
 
-const CATEGORY_ICON: Record<Category, string> = {
-  media: 'play_circle',
-  social: 'forum',
-  developer: 'code',
-  mail: 'mail',
-  general: 'public',
-}
-
-export function domainCategory(domain: string): Category {
+export function domainCategory(domain: string): DomainCategory {
   for (const [cat, keywords] of CATEGORY_RULES) {
     if (keywords.some((k) => domain.includes(k))) return cat
   }
   return 'general'
-}
-
-export function iconForDomain(domain: string): string {
-  return CATEGORY_ICON[domainCategory(domain)]
 }

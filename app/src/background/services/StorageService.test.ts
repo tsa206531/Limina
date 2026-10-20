@@ -61,6 +61,38 @@ describe('per-day time records', () => {
   })
 })
 
+describe('day stats', () => {
+  it('increments counters for the given day', async () => {
+    await StorageService.incrementDayStats({ blocks: 1 })
+    await StorageService.incrementDayStats({ blocks: 1, focusSessions: 1, focusMs: 1500 })
+    expect(await StorageService.getStatsByDay([today])).toEqual({
+      [today]: { blocks: 2, focusSessions: 1, focusMs: 1500 },
+    })
+  })
+
+  it('prunes old stats together with time records', async () => {
+    data[`stats:${tooOld}`] = { blocks: 1, focusSessions: 0, focusMs: 0 }
+    data[`stats:${today}`] = { blocks: 1, focusSessions: 0, focusMs: 0 }
+    await StorageService.pruneTimeRecords()
+    expect(Object.keys(data)).toEqual([`stats:${today}`])
+  })
+})
+
+describe('seedDefaultBlocklist', () => {
+  it('adds the default distracting sites to an empty list', async () => {
+    await StorageService.seedDefaultBlocklist()
+    const list = await StorageService.getBlocklist()
+    expect(list.map((e) => e.domain)).toContain('youtube.com')
+    expect(list.every((e) => e.type === 'locked')).toBe(true)
+  })
+
+  it('leaves an existing list alone', async () => {
+    data.blocklist = [{ id: '1', domain: 'a.com', type: 'locked', createdAt: 0 }]
+    await StorageService.seedDefaultBlocklist()
+    expect(await StorageService.getBlocklist()).toHaveLength(1)
+  })
+})
+
 describe('migrateLegacyTimeRecords', () => {
   it('splits the legacy blob into per-day keys and merges existing data', async () => {
     data.timeRecords = {
@@ -99,10 +131,12 @@ describe('importAll', () => {
 
   it('round-trips through exportAll', async () => {
     await StorageService.recordTime('a.com', 42)
+    await StorageService.incrementDayStats({ blocks: 3 })
     const backup = await StorageService.exportAll()
     data = {}
     await StorageService.importAll(backup)
     expect(data[`time:${today}`]).toEqual({ 'a.com': 42 })
+    expect(data[`stats:${today}`]).toEqual({ blocks: 3, focusSessions: 0, focusMs: 0 })
   })
 
   it('rejects non-Limina data without writing', async () => {

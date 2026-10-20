@@ -3,9 +3,8 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
-// 字型與圖示改為本地打包：離線可用、不向第三方發送請求
+// 字型本地打包：離線可用、不向第三方發送請求（圖示改用 Phosphor SVG，見 ./icons.ts）
 import '@fontsource-variable/inter'
-import '@/assets/fonts/material-symbols.css'
 import './style.css'
 import { useI18n } from '@/composables/useI18n'
 

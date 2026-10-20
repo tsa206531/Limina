@@ -6,7 +6,7 @@ import { TimeTracker } from './services/TimeTracker'
 import { StorageService, TIME_RETENTION_DAYS } from './services/StorageService'
 import { updateBadge } from './services/BadgeService'
 import { localDateKey, recentDateKeys } from '@/utils/date'
-import { SNOOZE_MAX, SNOOZE_MIN, TIMER_MAX, TIMER_MIN, clampInt } from '@/types'
+import { SNOOZE_MIN, TIMER_MAX, TIMER_MIN, clampInt } from '@/types'
 import type { AppSettings, MessageType, MessageResponse } from '@/types'
 
 const ALARM_TRACKER = 'nerd-time-tracker'
@@ -45,7 +45,11 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
     patch.focusWhitelistOnly = true
   }
 
+  // 舊版把英文預設訊息存進設定；改為空字串，封鎖頁才會依語系顯示預設訊息
+  if (stored?.blockerMessage === 'You shall not pass! 🧙‍♂️') patch.blockerMessage = ''
+
   if (Object.keys(patch).length > 0) await StorageService.updateSettings(patch)
+  if (reason === 'install') await StorageService.seedDefaultBlocklist()
   await StorageService.migrateLegacyTimeRecords()
   await StorageService.pruneTimeRecords()
   await ensureAlarms()
@@ -180,11 +184,32 @@ async function handleMessage(
     }
 
     case 'SNOOZE': {
-      // 寫入全域 snooze 狀態（所有分頁透過 storage.onChanged 感知），並以 alarm 精確解除
-      const minutes = clampInt(msg.minutes, SNOOZE_MIN, SNOOZE_MAX, 5)
-      await StorageService.setSnoozeUntil(Date.now() + minutes * 60 * 1000)
-      await chrome.alarms.create(ALARM_SNOOZE, { delayInMinutes: minutes })
+      // 暫停封鎖：封鎖頁的「休息 N 分鐘」或 popup 的「暫停 15 分鐘／1 小時／到明天」
+      // 寫入全域狀態（所有分頁透過 storage.onChanged 感知），並以 alarm 精確恢復
+      const now = Date.now()
+      const until = msg.until !== undefined
+        ? Math.min(Math.max(msg.until, now + 60_000), now + 24 * 60 * 60_000)
+        : now + clampInt(msg.minutes, SNOOZE_MIN, 24 * 60, 5) * 60_000
+      await StorageService.setSnoozeUntil(until)
+      await chrome.alarms.create(ALARM_SNOOZE, { when: until })
       await updateBadge()
+      return { success: true }
+    }
+
+    case 'RESUME_BLOCKING': {
+      await chrome.alarms.clear(ALARM_SNOOZE)
+      await StorageService.clearSnooze()
+      await updateBadge()
+      return { success: true }
+    }
+
+    case 'BLOCK_HIT': {
+      await StorageService.incrementDayStats({ blocks: 1 })
+      return { success: true }
+    }
+
+    case 'DISMISS_SESSION': {
+      await TimerService.dismissSession()
       return { success: true }
     }
 
@@ -196,9 +221,12 @@ async function handleMessage(
     case 'GET_TIME_STATS': {
       // 確保取得統計資料前先 flush 目前累積的時間
       await TimeTracker.flush()
-      const days = clampInt(msg.days, 1, TIME_RETENTION_DAYS, 30)
-      const timeByDay = await StorageService.getTimeByDay(recentDateKeys(days))
-      return { success: true, data: timeByDay }
+      const days = recentDateKeys(clampInt(msg.days, 1, TIME_RETENTION_DAYS, 30))
+      const [timeByDay, statsByDay] = await Promise.all([
+        StorageService.getTimeByDay(days),
+        StorageService.getStatsByDay(days),
+      ])
+      return { success: true, data: { timeByDay, statsByDay } }
     }
 
     case 'EXPORT_DATA': {

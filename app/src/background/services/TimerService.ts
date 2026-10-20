@@ -24,8 +24,14 @@ export const TimerService = {
       endTime,
       totalMs,
       pausedRemainingMs: undefined,
+      lastSession: undefined,
     })
     await updateBadge()
+  },
+
+  /** 使用者看過完成卡片後關閉 */
+  async dismissSession(): Promise<void> {
+    await StorageService.setTimerState({ lastSession: undefined })
   },
 
   async pause(): Promise<void> {
@@ -82,8 +88,13 @@ export const TimerService = {
     await updateBadge()
   },
 
+  /** 計時自然結束：記錄完成的專注時段，popup 下次開啟時顯示完成卡片 */
   async done(): Promise<void> {
+    const state = await StorageService.getTimerState()
+    const ms = state.totalMs ?? state.lastInputMin * 60 * 1000
     await this.cancel()
+    await StorageService.setTimerState({ lastSession: { completedAt: Date.now(), ms } })
+    await StorageService.incrementDayStats({ focusSessions: 1, focusMs: ms })
 
     const settings = await StorageService.getSettings()
     if (settings.showNotifications) {

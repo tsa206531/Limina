@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { BlockListEntry } from '@/types'
-import { evaluateBlock, toBlockState, type BlockState } from './block'
+import { blockReason, evaluateBlock, toBlockState, type BlockState } from './block'
 
 const entry = (domain: string, type: 'locked' | 'white'): BlockListEntry =>
   ({ id: domain + type, domain, type, createdAt: 0 })
@@ -52,14 +52,22 @@ describe('evaluateBlock', () => {
     expect(evaluateBlock(state, 'https://example.com/')).toBe('locked')
   })
 
-  it('does nothing when blocking is disabled', () => {
-    state.settings.isEnabled = false
-    expect(evaluateBlock(state, 'https://youtube.com/')).toBe('none')
-  })
-
   it('fills defaults for missing storage values', () => {
     const empty = toBlockState({})
-    expect(empty.settings.isEnabled).toBe(true)
+    expect(empty.snoozeUntil).toBe(0)
     expect(evaluateBlock(empty, 'https://youtube.com/')).toBe('none')
+  })
+})
+
+describe('blockReason', () => {
+  it('reports the block list for listed sites', () => {
+    expect(blockReason(state, 'https://youtube.com/')).toBe('blocklist')
+  })
+
+  it('reports whitelist-only focus for unlisted sites during a session', () => {
+    state.settings.focusWhitelistOnly = true
+    state.timer.isActive = true
+    expect(blockReason(state, 'https://example.com/')).toBe('focus-whitelist')
+    expect(blockReason(state, 'https://youtube.com/')).toBe('blocklist')
   })
 })

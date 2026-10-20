@@ -6,6 +6,15 @@ import { DEFAULT_TIMER_STATE } from '@/types'
 
 const CACHE_TTL = 5_000 // 計時器狀態 5 秒快取
 
+/** 秒數 → 時鐘格式：25:00、1:30:00 */
+export function formatClock(totalSec: number): string {
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  const mmss = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return h > 0 ? `${h}:${mmss}` : mmss
+}
+
 function send(message: object): Promise<{ success: boolean; data?: unknown } | undefined> {
   return chrome.runtime.sendMessage(message).catch(() => undefined)
 }
@@ -43,6 +52,14 @@ export const useTimerStore = defineStore('timer', () => {
   const resume = () => command({ type: 'RESUME_TIMER' })
   const extend = (minutes: number) => command({ type: 'EXTEND_TIMER', minutes })
   const cancel = () => command({ type: 'CANCEL_TIMER' })
+  const dismissSession = () => command({ type: 'DISMISS_SESSION' })
+
+  /** 30 分鐘內完成、尚未關閉的專注時段（顯示完成卡片） */
+  const recentSession = computed(() => {
+    const s = state.value.lastSession
+    if (!s || hasTimer.value || Date.now() - s.completedAt > 30 * 60_000) return null
+    return s
+  })
 
   function updateRemainingSec() {
     const s = state.value
@@ -82,11 +99,7 @@ export const useTimerStore = defineStore('timer', () => {
   }
 
   function formatted(): string {
-    const s = remainingSec.value
-    const h = Math.floor(s / 3600)
-    const m = Math.floor((s % 3600) / 60)
-    const sec = s % 60
-    return [h, m, sec].map((v) => String(v).padStart(2, '0')).join(':')
+    return formatClock(remainingSec.value)
   }
 
   function invalidate() {
@@ -94,7 +107,7 @@ export const useTimerStore = defineStore('timer', () => {
   }
 
   return {
-    state, remainingSec, totalSec, isPaused, hasTimer,
-    load, start, pause, resume, extend, cancel, formatted, invalidate,
+    state, remainingSec, totalSec, isPaused, hasTimer, recentSession,
+    load, start, pause, resume, extend, cancel, dismissSession, formatted, invalidate,
   }
 })
